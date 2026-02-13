@@ -1,0 +1,18 @@
+{
+  "perceivable": {
+    "description": "Information and user interface components must be presentable to users in ways they can perceive.",
+    "guidelines": ["Text alternatives", "Time-based media alternatives", "Adaptable content", "Distinguishable content"]
+  },
+  "operable": {
+    "description": "User interface components and navigation must be operable.",
+    "guidelines": ["Keyboard accessible", "Enough time", "Seizure-safe", "Navigable", "Input modalities"]
+  },
+  "understandable": {
+    "description": "Information and the operation of the user interface must be understandable.",
+    "guidelines": ["Readable", "Predictable", "Input assistance"]
+  },
+  "robust": {
+    "description": "Content must be robust enough to be interpreted by a wide variety of user agents, including assistive technologies.",
+    "guidelines": ["Compatible with current and future tools"]
+  }
+}

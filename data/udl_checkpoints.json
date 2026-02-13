@@ -1,0 +1,17 @@
+{
+  "engagement": {
+    "recruiting_interest": ["Optimize individual choice and autonomy", "Optimize relevance, value, and authenticity", "Minimize threats and distractions"],
+    "sustaining_effort": ["Heighten salience of goals and objectives", "Vary demands and resources", "Foster collaboration and community", "Increase mastery-oriented feedback"],
+    "self_regulation": ["Promote expectations that optimize motivation", "Facilitate coping skills and strategies", "Develop self-assessment and reflection"]
+  },
+  "representation": {
+    "perception": ["Offer ways of customizing display", "Offer alternatives for auditory information", "Offer alternatives for visual information"],
+    "language_symbols": ["Clarify vocabulary and symbols", "Clarify syntax and structure", "Support decoding", "Promote understanding across languages", "Illustrate through multiple media"],
+    "comprehension": ["Activate or supply background knowledge", "Highlight patterns and relationships", "Guide information processing", "Maximize transfer and generalization"]
+  },
+  "action_expression": {
+    "physical_action": ["Vary methods for response and navigation", "Optimize access to tools and assistive technologies"],
+    "expression_communication": ["Use multiple media for communication", "Use multiple tools for construction", "Build fluencies with graduated support"],
+    "executive_functions": ["Guide appropriate goal-setting", "Support planning and strategy development", "Facilitate managing information and resources", "Enhance capacity for monitoring progress"]
+  }
+}

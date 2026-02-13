@@ -1,0 +1,38 @@
+{
+  "sensory": [
+    {"name": "Large print materials", "subcategory": "visual"},
+    {"name": "Screen reader compatibility", "subcategory": "visual"},
+    {"name": "Audio descriptions", "subcategory": "visual"},
+    {"name": "Captioning", "subcategory": "auditory"},
+    {"name": "Sign language interpretation", "subcategory": "auditory"},
+    {"name": "FM system", "subcategory": "auditory"}
+  ],
+  "motor": [
+    {"name": "Alternative keyboard", "subcategory": "fine_motor"},
+    {"name": "Voice-to-text software", "subcategory": "fine_motor"},
+    {"name": "Extended time for tasks", "subcategory": "general"},
+    {"name": "Accessible seating", "subcategory": "mobility"}
+  ],
+  "cognitive": [
+    {"name": "Simplified instructions", "subcategory": "processing"},
+    {"name": "Visual schedules", "subcategory": "organization"},
+    {"name": "Graphic organizers", "subcategory": "organization"},
+    {"name": "Repeated practice opportunities", "subcategory": "memory"},
+    {"name": "Chunked assignments", "subcategory": "attention"}
+  ],
+  "communication": [
+    {"name": "AAC device", "subcategory": "expressive"},
+    {"name": "Visual supports", "subcategory": "receptive"},
+    {"name": "Social stories", "subcategory": "pragmatic"}
+  ],
+  "social_emotional": [
+    {"name": "Calm-down space", "subcategory": "regulation"},
+    {"name": "Peer buddy system", "subcategory": "social"},
+    {"name": "Check-in system", "subcategory": "emotional"}
+  ],
+  "executive_function": [
+    {"name": "Task checklists", "subcategory": "planning"},
+    {"name": "Timer/visual timer", "subcategory": "time_management"},
+    {"name": "Organizational system", "subcategory": "organization"}
+  ]
+}

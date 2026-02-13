@@ -1,0 +1,20 @@
+{
+  "wong_2011": {
+    "description": "Color-blind safe palette from Wong 2011 (Nature Methods)",
+    "colors": {
+      "black": "#000000",
+      "orange": "#E69F00",
+      "sky_blue": "#56B4E9",
+      "bluish_green": "#009E73",
+      "yellow": "#F0E442",
+      "blue": "#0072B2",
+      "vermillion": "#D55E00",
+      "reddish_purple": "#CC79A7"
+    }
+  },
+  "default_theme": {
+    "primary": "#6f2fa6",
+    "student_accent": "#a23b84",
+    "teacher_accent": "#3a2b95"
+  }
+}
