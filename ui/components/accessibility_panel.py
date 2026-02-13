@@ -23,8 +23,6 @@ class AccessibilityPanel(QDialog):
 
     def _build_ui(self):
         c = get_colors()
-        self.setStyleSheet(f"QDialog {{ background-color: {c['dark_card']}; }}")
-
         layout = QVBoxLayout(self)
         layout.setSpacing(16)
         layout.setContentsMargins(24, 24, 24, 24)

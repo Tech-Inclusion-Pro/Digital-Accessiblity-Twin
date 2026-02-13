@@ -36,6 +36,11 @@ class AccessibilityManager(QObject):
             "success": "#009E73",
             "warning": "#E69F00",
             "error": "#D55E00",
+            "dark_bg": "#0d1b2a",
+            "dark_card": "#1b2838",
+            "dark_border": "#1e3448",
+            "dark_hover": "#1a3050",
+            "dark_input": "#0e2d4a",
         },
         "deuteranopia": {
             "primary": "#0072B2",
@@ -45,6 +50,11 @@ class AccessibilityManager(QObject):
             "success": "#56B4E9",
             "warning": "#E69F00",
             "error": "#D55E00",
+            "dark_bg": "#0d1b2a",
+            "dark_card": "#1b2838",
+            "dark_border": "#1e3448",
+            "dark_hover": "#1a3050",
+            "dark_input": "#0e2d4a",
         },
         "tritanopia": {
             "primary": "#CC79A7",
@@ -54,6 +64,11 @@ class AccessibilityManager(QObject):
             "success": "#009E73",
             "warning": "#D55E00",
             "error": "#cc3333",
+            "dark_bg": "#1a1520",
+            "dark_card": "#261e2e",
+            "dark_border": "#3a2840",
+            "dark_hover": "#2e2238",
+            "dark_input": "#321a3a",
         },
         "monochrome": {
             "primary": "#858585",
@@ -63,6 +78,11 @@ class AccessibilityManager(QObject):
             "success": "#a0a0a0",
             "warning": "#d0d0d0",
             "error": "#c0c0c0",
+            "dark_bg": "#1a1a1a",
+            "dark_card": "#252525",
+            "dark_border": "#333333",
+            "dark_hover": "#2e2e2e",
+            "dark_input": "#303030",
         },
     }
 

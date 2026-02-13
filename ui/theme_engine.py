@@ -35,12 +35,24 @@ def get_main_stylesheet(colors: dict = None, fonts: dict = None,
         color: {c['text']};
     }}
 
+    QLabel {{
+        background: transparent;
+        color: {c['text']};
+    }}
+
     QPushButton {{
         min-height: {touch}px;
         min-width: {touch}px;
         border-radius: {SPACING['button_radius']}px;
         padding: 8px 16px;
         font-weight: bold;
+        background-color: {c['dark_card']};
+        color: {c['text']};
+        border: 1px solid {c['dark_border']};
+    }}
+
+    QPushButton:hover {{
+        background-color: {c['dark_hover']};
     }}
 
     QPushButton:focus {{
@@ -61,6 +73,16 @@ def get_main_stylesheet(colors: dict = None, fonts: dict = None,
         border: 2px solid {c['primary']};
     }}
 
+    QFrame {{
+        background: transparent;
+        border: none;
+    }}
+
+    QScrollArea {{
+        background: transparent;
+        border: none;
+    }}
+
     QScrollBar:vertical {{
         background-color: {c['dark_bg']};
         width: 10px;
@@ -78,11 +100,8 @@ def get_main_stylesheet(colors: dict = None, fonts: dict = None,
         height: 0px;
     }}
 
-    QLabel {{
-        color: {c['text']};
-    }}
-
     QCheckBox {{
+        background: transparent;
         color: {c['text']};
         spacing: 8px;
     }}
@@ -100,12 +119,45 @@ def get_main_stylesheet(colors: dict = None, fonts: dict = None,
         border: 2px solid {c['primary']};
     }}
 
+    QGroupBox {{
+        background-color: {c['dark_card']};
+        color: {c['text']};
+        border: 1px solid {c['dark_border']};
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 12px;
+    }}
+    QGroupBox::title {{
+        color: {c['primary_text']};
+        subcontrol-origin: margin;
+        left: 12px;
+        padding: 0 4px;
+    }}
+
+    QComboBox QAbstractItemView {{
+        background-color: {c['dark_card']};
+        color: {c['text']};
+        selection-background-color: {c['primary']};
+        selection-color: white;
+        border: 1px solid {c['dark_border']};
+    }}
+
+    QComboBox::drop-down {{
+        border: none;
+        width: 28px;
+    }}
+
     QToolTip {{
         background-color: {c['dark_card']};
         color: {c['text']};
         border: 1px solid {c['dark_border']};
         padding: 6px;
         border-radius: 4px;
+    }}
+
+    QDialog {{
+        background-color: {c['dark_card']};
+        color: {c['text']};
     }}
 
     {focus_extra}
