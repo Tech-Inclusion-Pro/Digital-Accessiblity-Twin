@@ -1,6 +1,8 @@
 """Three-tab login screen: Student Login / Teacher Login / Register."""
 
 import json
+import os
+import sys
 from pathlib import Path
 
 from PyQt6.QtWidgets import (
@@ -9,6 +11,16 @@ from PyQt6.QtWidgets import (
     QStackedWidget, QScrollArea, QSizePolicy, QDialog,
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from PyQt6.QtGui import QPixmap
+
+
+def _get_asset_path(filename: str) -> str:
+    """Get the path to an asset file."""
+    if getattr(sys, "frozen", False):
+        base = sys._MEIPASS
+    else:
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return os.path.join(base, "assets", filename)
 
 from config.settings import get_colors
 from config.brand import ROLE_ACCENTS, BRAND_COLORS
@@ -310,6 +322,22 @@ class LoginScreen(QWidget):
         clayout = QVBoxLayout(container)
         clayout.setContentsMargins(36, 28, 36, 28)
         clayout.setSpacing(12)
+
+        # Logo
+        logo_label = QLabel()
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo_path = _get_asset_path("logo.png")
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            scaled = pixmap.scaled(
+                120, 120,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+            logo_label.setPixmap(scaled)
+        logo_label.setMinimumHeight(120)
+        logo_label.setAccessibleName("AccessTwin logo")
+        clayout.addWidget(logo_label)
 
         # App title
         title = QLabel("AccessTwin")

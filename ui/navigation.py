@@ -1,8 +1,19 @@
 """Main application window — navigation controller."""
 
-from PyQt6.QtWidgets import QMainWindow, QStackedWidget, QApplication, QWidget, QLabel, QVBoxLayout
+import os
+import sys
+
+from PyQt6.QtWidgets import QMainWindow, QStackedWidget, QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QCursor, QShortcut, QKeySequence
+from PyQt6.QtGui import QCursor, QPixmap, QShortcut, QKeySequence
+
+
+def _get_asset_path(filename: str) -> str:
+    if getattr(sys, "frozen", False):
+        base = sys._MEIPASS
+    else:
+        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base, "assets", filename)
 
 from config.settings import APP_SETTINGS, get_colors
 from config.brand import ROLE_ACCENTS
@@ -77,12 +88,45 @@ class MainWindow(QMainWindow):
     def _make_placeholder(self, title: str, role: str) -> QWidget:
         w = QWidget()
         layout = QVBoxLayout(w)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setContentsMargins(16, 12, 16, 16)
+        layout.setSpacing(0)
+
+        # Logo header row (top-left)
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.setSpacing(10)
+
+        logo_label = QLabel()
+        logo_path = _get_asset_path("logo.png")
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            scaled = pixmap.scaled(
+                40, 40,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+            logo_label.setPixmap(scaled)
+        logo_label.setFixedSize(40, 40)
+        logo_label.setAccessibleName("AccessTwin logo")
+        header.addWidget(logo_label)
+
+        app_name = QLabel("AccessTwin")
+        app_name.setStyleSheet("font-size: 18px; font-weight: bold; color: #b065d6;")
+        app_name.setAccessibleName("AccessTwin")
+        header.addWidget(app_name)
+
+        header.addStretch()
+        layout.addLayout(header)
+
+        # Centered placeholder content
+        layout.addStretch()
         label = QLabel(f"{title}\n(Coming in Phase 2)")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setStyleSheet("font-size: 24px; color: #b8b8b8;")
         label.setAccessibleName(title)
         layout.addWidget(label)
+        layout.addStretch()
+
         return w
 
     # -- theme / a11y --
