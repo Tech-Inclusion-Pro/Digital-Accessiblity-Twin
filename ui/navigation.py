@@ -1,22 +1,10 @@
 """Main application window — navigation controller."""
 
-import os
-import sys
+from PyQt6.QtWidgets import QMainWindow, QStackedWidget, QApplication
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QShortcut, QKeySequence
 
-from PyQt6.QtWidgets import QMainWindow, QStackedWidget, QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QCursor, QPixmap, QShortcut, QKeySequence
-
-
-def _get_asset_path(filename: str) -> str:
-    if getattr(sys, "frozen", False):
-        base = sys._MEIPASS
-    else:
-        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base, "assets", filename)
-
-from config.settings import APP_SETTINGS, get_colors
-from config.brand import ROLE_ACCENTS
+from config.settings import APP_SETTINGS
 from models.database import DatabaseManager
 from models.auth import AuthManager
 from ai.backend_manager import BackendManager
@@ -56,11 +44,16 @@ class MainWindow(QMainWindow):
         self.login_screen.login_successful.connect(self._on_login)
         self.stack.addWidget(self.login_screen)  # index 0
 
-        # Placeholder dashboards for Phase 1
-        self.student_dashboard = self._make_placeholder("Student Dashboard", "student")
+        # Real dashboards
+        from ui.screens.student.dashboard import StudentDashboard
+        from ui.screens.teacher.dashboard import TeacherDashboard
+
+        self.student_dashboard = StudentDashboard(self.db_manager, self.auth_manager)
+        self.student_dashboard.logout_requested.connect(self._on_logout)
         self.stack.addWidget(self.student_dashboard)  # index 1
 
-        self.teacher_dashboard = self._make_placeholder("Teacher Dashboard", "teacher")
+        self.teacher_dashboard = TeacherDashboard(self.db_manager, self.auth_manager)
+        self.teacher_dashboard.logout_requested.connect(self._on_logout)
         self.stack.addWidget(self.teacher_dashboard)  # index 2
 
         # Apply theme
@@ -78,56 +71,22 @@ class MainWindow(QMainWindow):
         user = self.auth_manager.get_current_user()
         if user.role == "student":
             self.a11y.set_role_accent("student")
+            self.student_dashboard.refresh_data()
             self.stack.setCurrentIndex(1)
             FocusManager.set_focus_after_transition(self.student_dashboard)
         else:
             self.a11y.set_role_accent("teacher")
+            self.teacher_dashboard.refresh_data()
             self.stack.setCurrentIndex(2)
             FocusManager.set_focus_after_transition(self.teacher_dashboard)
 
-    def _make_placeholder(self, title: str, role: str) -> QWidget:
-        w = QWidget()
-        layout = QVBoxLayout(w)
-        layout.setContentsMargins(16, 12, 16, 16)
-        layout.setSpacing(0)
-
-        # Logo header row (top-left)
-        header = QHBoxLayout()
-        header.setContentsMargins(0, 0, 0, 0)
-        header.setSpacing(10)
-
-        logo_label = QLabel()
-        logo_path = _get_asset_path("logo.png")
-        if os.path.exists(logo_path):
-            pixmap = QPixmap(logo_path)
-            scaled = pixmap.scaled(
-                40, 40,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-            logo_label.setPixmap(scaled)
-        logo_label.setFixedSize(40, 40)
-        logo_label.setAccessibleName("AccessTwin logo")
-        header.addWidget(logo_label)
-
-        app_name = QLabel("AccessTwin")
-        app_name.setStyleSheet("font-size: 18px; font-weight: bold; color: #b065d6;")
-        app_name.setAccessibleName("AccessTwin")
-        header.addWidget(app_name)
-
-        header.addStretch()
-        layout.addLayout(header)
-
-        # Centered placeholder content
-        layout.addStretch()
-        label = QLabel(f"{title}\n(Coming in Phase 2)")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet("font-size: 24px; color: #b8b8b8;")
-        label.setAccessibleName(title)
-        layout.addWidget(label)
-        layout.addStretch()
-
-        return w
+    def _on_logout(self):
+        """Handle logout from either dashboard."""
+        self.auth_manager.logout()
+        self.a11y.set_role_accent(None)
+        self._apply_theme()
+        self.stack.setCurrentIndex(0)
+        FocusManager.set_focus_after_transition(self.login_screen)
 
     # -- theme / a11y --
 
