@@ -12,6 +12,7 @@ from ui.screens.teacher.students_page import TeacherStudentsPage
 from ui.screens.teacher.evaluate_page import TeacherEvaluatePage
 from ui.screens.teacher.log_impl_page import TeacherLogImplPage
 from ui.screens.teacher.tracking_page import TeacherTrackingPage
+from ui.screens.teacher.insights_page import TeacherInsightsPage
 
 NAV_ITEMS = [
     {"key": "home", "icon": "\u2302", "label": "Home"},
@@ -19,6 +20,8 @@ NAV_ITEMS = [
     {"key": "evaluate", "icon": "\u25B3", "label": "Evaluate"},
     {"key": "log", "icon": "\u270E", "label": "Log Implementation"},
     {"key": "tracking", "icon": "\u2630", "label": "Tracking"},
+    {"key": "insights", "icon": "\u2606", "label": "AI Insights"},
+    {"key": "ai_settings", "icon": "\u2261", "label": "AI Settings"},
 ]
 
 PAGE_MAP = {
@@ -27,6 +30,8 @@ PAGE_MAP = {
     "evaluate": 2,
     "log": 3,
     "tracking": 4,
+    "insights": 5,
+    "ai_settings": 6,
 }
 
 BREADCRUMB_MAP = {
@@ -35,6 +40,8 @@ BREADCRUMB_MAP = {
     "evaluate": ["Teacher", "Evaluate"],
     "log": ["Teacher", "Log Implementation"],
     "tracking": ["Teacher", "Tracking"],
+    "insights": ["Teacher", "AI Insights"],
+    "ai_settings": ["Teacher", "AI Settings"],
 }
 
 
@@ -89,6 +96,13 @@ class TeacherDashboard(QWidget):
         self._tracking_page = TeacherTrackingPage(self.db, self.auth)
         self._stack.addWidget(self._tracking_page)
 
+        self._insights_page = TeacherInsightsPage(self.db, self.auth, self.backend_manager)
+        self._stack.addWidget(self._insights_page)
+
+        from ui.screens.ai_settings_page import AISettingsPage
+        self._ai_settings_page = AISettingsPage(self.backend_manager)
+        self._stack.addWidget(self._ai_settings_page)
+
         right.addWidget(self._stack, stretch=1)
         outer.addLayout(right, stretch=1)
 
@@ -124,6 +138,8 @@ class TeacherDashboard(QWidget):
             self._evaluate_page,
             self._log_page,
             self._tracking_page,
+            self._insights_page,
+            self._ai_settings_page,
         ]
         if 0 <= idx < len(pages):
             pages[idx].refresh_data()

@@ -28,6 +28,7 @@ class MainWindow(QMainWindow):
         self.db_manager = DatabaseManager()
         self.auth_manager = AuthManager(self.db_manager)
         self.backend_manager = BackendManager()
+        self.backend_manager.load_config()
         self.a11y = AccessibilityManager.instance() or AccessibilityManager.create()
 
         # Screen stack
@@ -48,7 +49,7 @@ class MainWindow(QMainWindow):
         from ui.screens.student.dashboard import StudentDashboard
         from ui.screens.teacher.dashboard import TeacherDashboard
 
-        self.student_dashboard = StudentDashboard(self.db_manager, self.auth_manager)
+        self.student_dashboard = StudentDashboard(self.db_manager, self.auth_manager, self.backend_manager)
         self.student_dashboard.logout_requested.connect(self._on_logout)
         self.stack.addWidget(self.student_dashboard)  # index 1
 

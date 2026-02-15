@@ -213,6 +213,7 @@ class SetupWizard(QDialog):
             self.bm.cloud_consent_data = True
 
         self._apply_to_manager()
+        self.bm.save_config()
         self.accept()
 
     def _apply_to_manager(self):

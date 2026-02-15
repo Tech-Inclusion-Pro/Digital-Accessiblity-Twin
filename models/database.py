@@ -40,6 +40,7 @@ class DatabaseManager:
         from models.evaluation import TwinEvaluation  # noqa: F401
         from models.tracking import TrackingLog  # noqa: F401
         from models.audit import AuditLog, ConsentRecord  # noqa: F401
+        from models.consultation_log import ConsultationLog  # noqa: F401
 
         Base.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False)

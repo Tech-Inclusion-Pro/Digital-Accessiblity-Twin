@@ -266,9 +266,13 @@ class TeacherStudentsPage(QWidget):
             ).order_by(TrackingLog.created_at.desc()).limit(20).all()
 
             from ui.screens.teacher.coach_dialog import CoachDialog
+            user = self.auth.get_current_user()
             dlg = CoachDialog(
                 profile, supports, tracking_logs,
-                self.backend_manager, self,
+                self.backend_manager,
+                db_manager=self.db,
+                teacher_user_id=user.id if user else None,
+                parent=self,
             )
             dlg.exec()
         finally:

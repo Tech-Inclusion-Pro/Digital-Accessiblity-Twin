@@ -46,6 +46,37 @@ class BackendManager:
         return None
 
     @property
+    def is_configured(self) -> bool:
+        return self._client is not None
+
+    def save_config(self):
+        from ai.ai_settings_store import save_ai_settings
+        save_ai_settings({
+            "provider_type": self.provider_type,
+            "provider": self.provider,
+            "model": self.model,
+            "base_url": self.base_url,
+            "api_key": self.api_key,
+            "cloud_consent_institutional": self.cloud_consent_institutional,
+            "cloud_consent_data": self.cloud_consent_data,
+        })
+
+    def load_config(self):
+        from ai.ai_settings_store import load_ai_settings
+        data = load_ai_settings()
+        if not data:
+            return
+        self.cloud_consent_institutional = data.get("cloud_consent_institutional", False)
+        self.cloud_consent_data = data.get("cloud_consent_data", False)
+        self.configure(
+            provider_type=data.get("provider_type", "local"),
+            provider=data.get("provider", "ollama"),
+            model=data.get("model"),
+            api_key=data.get("api_key"),
+            base_url=data.get("base_url"),
+        )
+
+    @property
     def cloud_consent_granted(self) -> bool:
         return self.cloud_consent_institutional and self.cloud_consent_data
 

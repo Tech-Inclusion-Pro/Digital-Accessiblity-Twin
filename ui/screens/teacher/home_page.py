@@ -224,8 +224,4 @@ class TeacherHomePage(QWidget):
         return card
 
     def _open_ai_setup(self):
-        if self.backend_manager is None:
-            return
-        from ui.screens.setup_wizard import SetupWizard
-        dlg = SetupWizard(self.backend_manager, self)
-        dlg.exec()
+        self.navigate_to.emit("ai_settings")

@@ -1,6 +1,8 @@
 """Coach chat dialog — privacy-preserving AI consultation for teachers."""
 
 import asyncio
+import json
+from datetime import datetime, timezone
 from functools import partial
 
 from PyQt6.QtWidgets import (
@@ -14,6 +16,7 @@ from config.settings import get_colors, APP_SETTINGS
 from ai.backend_manager import BackendManager
 from ai.privacy_aggregator import PrivacyAggregator
 from ai.prompts.coach_prompt import build_coach_prompt
+from models.consultation_log import ConsultationLog
 
 # Category → pill colour (muted palette that works on dark backgrounds)
 _CATEGORY_COLORS = {
@@ -74,11 +77,14 @@ class CoachDialog(QDialog):
     """Privacy-preserving AI coach consultation dialog."""
 
     def __init__(self, profile, supports, tracking_logs,
-                 backend_manager: BackendManager, parent=None):
+                 backend_manager: BackendManager, db_manager=None,
+                 teacher_user_id=None, parent=None):
         super().__init__(parent)
         self.profile = profile
         self.supports = supports
         self.backend_manager = backend_manager
+        self.db_manager = db_manager
+        self.teacher_user_id = teacher_user_id
         self._worker = None
         self._conversation_history: list = []
         self._current_assistant_label = None
@@ -91,6 +97,9 @@ class CoachDialog(QDialog):
         self._system_prompt = build_coach_prompt(
             self._aggregated["ai_only"]["full_context_for_ai"]
         )
+
+        # Load past consultations into the system prompt
+        self._append_past_consultations()
 
         self.setWindowTitle(
             f"Accessibility Coach — {self._teacher_safe['first_name']}"
@@ -245,8 +254,8 @@ class CoachDialog(QDialog):
         footer_row = QHBoxLayout()
         footer_row.setSpacing(12)
 
-        configure_link = QPushButton("Configure AI")
-        configure_link.setAccessibleName("Configure AI backend")
+        configure_link = QPushButton("Quick AI Setup")
+        configure_link.setAccessibleName("Quick AI setup wizard")
         configure_link.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         configure_link.setCursor(Qt.CursorShape.PointingHandCursor)
         configure_link.setStyleSheet(
@@ -255,6 +264,23 @@ class CoachDialog(QDialog):
         )
         configure_link.clicked.connect(self._open_setup_wizard)
         footer_row.addWidget(configure_link)
+
+        transparency_link = QPushButton("How was this decided?")
+        transparency_link.setAccessibleName("Show AI transparency information")
+        transparency_link.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        transparency_link.setCursor(Qt.CursorShape.PointingHandCursor)
+        transparency_link.setStyleSheet(
+            f"QPushButton {{ background: transparent; color: {c['text_muted']}; "
+            f"border: none; font-size: 12px; text-decoration: underline; }}"
+        )
+        transparency_link.clicked.connect(self._show_transparency)
+        footer_row.addWidget(transparency_link)
+
+        sidebar_hint = QLabel("Full AI settings available in sidebar")
+        sidebar_hint.setStyleSheet(
+            f"font-size: 11px; color: {c['text_muted']};"
+        )
+        footer_row.addWidget(sidebar_hint)
 
         self._status_label = QLabel()
         self._status_label.setStyleSheet(
@@ -554,12 +580,83 @@ class CoachDialog(QDialog):
     def _open_setup_wizard(self):
         from ui.screens.setup_wizard import SetupWizard
         dlg = SetupWizard(self.backend_manager, self)
-        dlg.exec()
+        if dlg.exec():
+            self.backend_manager.save_config()
         # Refresh status after wizard closes
         self._update_status_label()
         self._no_backend_widget.setVisible(
             self.backend_manager._client is None
         )
+
+    def _show_transparency(self):
+        """Show the AI transparency dialog."""
+        from ui.components.transparency_dialog import TransparencyDialog, TransparencyInfo
+
+        data_summary = {
+            "Student": f"{self._teacher_safe['first_name']} (first name only)",
+            "Support categories": ", ".join(
+                self._teacher_safe["support_categories"]
+            ) or "None",
+            "Active supports": str(self._teacher_safe.get("active_support_count", 0)),
+            "Strength themes": ", ".join(
+                self._teacher_safe["strength_themes"]
+            ) or "None",
+            "Goal themes": ", ".join(
+                self._teacher_safe["goal_themes"]
+            ) or "None",
+        }
+        if self._teacher_safe["udl_principles"]:
+            data_summary["UDL principles"] = ", ".join(
+                self._teacher_safe["udl_principles"][:6]
+            )
+        if self._teacher_safe["pour_principles"]:
+            data_summary["POUR principles"] = ", ".join(
+                self._teacher_safe["pour_principles"][:4]
+            )
+        if self._teacher_safe["effectiveness_summary"]:
+            parts = [
+                f"{cat}: {avg}/5"
+                for cat, avg in self._teacher_safe["effectiveness_summary"].items()
+            ]
+            data_summary["Effectiveness"] = ", ".join(parts)
+
+        info = TransparencyInfo(
+            feature_name="Accessibility Coach",
+            provider_type=self.backend_manager.provider_type,
+            provider=self.backend_manager.provider,
+            model=self.backend_manager.model,
+            principles=[
+                "Nothing About Us Without Us — the student's own voice and "
+                "preferences are paramount.",
+                "Presume Competence — assume the student can learn and succeed.",
+                "Design for the Margins — solutions that work for students at "
+                "the margins work for everyone.",
+                "Intersectionality — disability interacts with other identities.",
+                "Collective Access — access benefits the whole community.",
+            ],
+            privacy_rules=[
+                "Never reveals specific diagnoses or medical information.",
+                "Never mentions stakeholder names or family members.",
+                "Never quotes specific history events or personal anecdotes.",
+                "Uses broad support themes only, not specific tool names.",
+                "Uses the student's first name only.",
+                "Declines requests for confidential details and redirects.",
+            ],
+            data_summary=data_summary,
+            warnings=[
+                "AI responses are based on aggregated data, not direct "
+                "knowledge of the student.",
+                "The conversation session may affect response quality — "
+                "longer sessions may drift.",
+                "AI may occasionally produce inaccurate or inappropriate "
+                "suggestions.",
+                "Always verify recommendations with the student and their "
+                "support team.",
+            ],
+        )
+
+        dlg = TransparencyDialog(info, self)
+        dlg.exec()
 
     def _on_stream_done(self):
         """Called when streaming finishes — save assistant response to history."""
@@ -574,3 +671,87 @@ class CoachDialog(QDialog):
         self._current_assistant_label = None
         self._set_input_enabled(True)
         self._input.setFocus()
+
+    # ---- consultation persistence ----
+
+    def _append_past_consultations(self):
+        """Load recent past consultations and append context to the system prompt."""
+        if not self.db_manager or not self.teacher_user_id:
+            return
+
+        session = self.db_manager.get_session()
+        try:
+            past = (
+                session.query(ConsultationLog)
+                .filter(
+                    ConsultationLog.profile_id == self.profile.id,
+                    ConsultationLog.teacher_user_id == self.teacher_user_id,
+                )
+                .order_by(ConsultationLog.created_at.desc())
+                .limit(10)
+                .all()
+            )
+        finally:
+            session.close()
+
+        if not past:
+            return
+
+        lines = [
+            "",
+            "=== PREVIOUS CONSULTATION HISTORY ===",
+            "The teacher has consulted about this student before. Use this to avoid",
+            "repeating advice and to build on previous discussions.",
+            "",
+        ]
+
+        for i, log in enumerate(reversed(past), 1):
+            ts = log.created_at.strftime("%Y-%m-%d %H:%M") if log.created_at else "unknown"
+            lines.append(f"--- Consultation {i} ({ts}) ---")
+            messages = log.conversation
+            # Show up to 6 messages (first 3 exchanges), truncated
+            for msg in messages[:6]:
+                role = "Teacher" if msg.get("role") == "user" else "Coach"
+                content = msg.get("content", "")[:300]
+                lines.append(f"  {role}: {content}")
+            lines.append(f"  ... ({log.message_count} total messages)")
+            lines.append("")
+
+        lines.append("=== END PREVIOUS HISTORY ===")
+
+        self._system_prompt += "\n" + "\n".join(lines)
+
+    def _save_consultation_log(self):
+        """Persist the current conversation to the database."""
+        if not self.db_manager or not self.teacher_user_id:
+            return
+        if not self._conversation_history:
+            return
+
+        # Summary = first user question, truncated
+        summary = None
+        for msg in self._conversation_history:
+            if msg.get("role") == "user":
+                summary = msg["content"][:150]
+                break
+
+        session = self.db_manager.get_session()
+        try:
+            log = ConsultationLog(
+                profile_id=self.profile.id,
+                teacher_user_id=self.teacher_user_id,
+                summary=summary,
+                message_count=len(self._conversation_history),
+            )
+            log.conversation = self._conversation_history
+            session.add(log)
+            session.commit()
+        except Exception:
+            session.rollback()
+        finally:
+            session.close()
+
+    def closeEvent(self, event):
+        """Save the consultation log when the dialog closes."""
+        self._save_consultation_log()
+        super().closeEvent(event)
