@@ -12,9 +12,9 @@ COLORS = {
     "dark_input": "#0f3460",
     "text": "#ffffff",
     "text_muted": "#b8b8b8",
-    "success": "#28a745",
+    "success": "#4cce5f",
     "warning": "#ffc107",
-    "error": "#ff4d5e",
+    "error": "#ff6b7a",
 }
 
 

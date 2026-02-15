@@ -22,7 +22,8 @@ class AccessibilityManager(QObject):
 
     HIGH_CONTRAST_OVERRIDES = {
         "primary_text": "#f0a0d8",
-        "error": "#ff8a94",
+        "error": "#ff9da7",
+        "success": "#6fe882",
         "text_muted": "#d4d4d4",
     }
 
@@ -123,6 +124,9 @@ class AccessibilityManager(QObject):
         self._dyslexia_font = False
         self._custom_cursor = "default"
         self._reading_ruler = False
+        self._letter_spacing = 0  # extra px (WCAG 1.4.12)
+        self._word_spacing = 0    # extra px
+        self._line_height = 0     # extra px
         self._role_accent = None  # set on login
 
     # -- properties --
@@ -158,6 +162,18 @@ class AccessibilityManager(QObject):
     @property
     def reading_ruler(self):
         return self._reading_ruler
+
+    @property
+    def letter_spacing(self):
+        return self._letter_spacing
+
+    @property
+    def word_spacing(self):
+        return self._word_spacing
+
+    @property
+    def line_height(self):
+        return self._line_height
 
     @property
     def role_accent(self):
@@ -203,6 +219,24 @@ class AccessibilityManager(QObject):
     def set_reading_ruler(self, enabled: bool):
         if enabled != self._reading_ruler:
             self._reading_ruler = enabled
+            self.settings_changed.emit()
+
+    def set_letter_spacing(self, px: int):
+        px = max(0, min(8, px))
+        if px != self._letter_spacing:
+            self._letter_spacing = px
+            self.settings_changed.emit()
+
+    def set_word_spacing(self, px: int):
+        px = max(0, min(12, px))
+        if px != self._word_spacing:
+            self._word_spacing = px
+            self.settings_changed.emit()
+
+    def set_line_height(self, px: int):
+        px = max(0, min(12, px))
+        if px != self._line_height:
+            self._line_height = px
             self.settings_changed.emit()
 
     def set_role_accent(self, role: str):
@@ -295,6 +329,9 @@ class AccessibilityManager(QObject):
             "dyslexia_font": self._dyslexia_font,
             "custom_cursor": self._custom_cursor,
             "reading_ruler": self._reading_ruler,
+            "letter_spacing": self._letter_spacing,
+            "word_spacing": self._word_spacing,
+            "line_height": self._line_height,
         }
 
     def load_from_dict(self, data: dict):
@@ -320,6 +357,16 @@ class AccessibilityManager(QObject):
             val = data.get(key, False)
             if val != getattr(self, attr):
                 setattr(self, attr, val)
+                changed = True
+
+        for key, attr in [
+            ("letter_spacing", "_letter_spacing"),
+            ("word_spacing", "_word_spacing"),
+            ("line_height", "_line_height"),
+        ]:
+            val = data.get(key, 0)
+            if isinstance(val, int) and val != getattr(self, attr):
+                setattr(self, attr, max(0, val))
                 changed = True
 
         if changed:
