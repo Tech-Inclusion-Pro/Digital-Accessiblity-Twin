@@ -207,6 +207,13 @@ class StudentProfilePage(QWidget):
             return
         items = self._profile.strengths
         if index < len(items):
+            reply = QMessageBox.question(
+                self, "Confirm Delete",
+                f"Are you sure you want to remove this strength?\n\n\"{items[index].get('text', '')}\"",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
             items.pop(index)
             self._save_json_field("strengths", items)
             self._refresh_strengths()
@@ -316,6 +323,7 @@ class StudentProfilePage(QWidget):
         desc = self._sup_desc.text().strip()
         if not desc:
             QMessageBox.warning(self, "Missing Info", "Please enter a description.")
+            self._sup_desc.setFocus()
             return
 
         cat = self._sup_cat.currentData()
@@ -411,6 +419,13 @@ class StudentProfilePage(QWidget):
             return
         items = self._profile.history
         if index < len(items):
+            reply = QMessageBox.question(
+                self, "Confirm Delete",
+                f"Are you sure you want to remove this history entry?\n\n\"{items[index].get('text', '')}\"",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
             items.pop(index)
             self._save_json_field("history", items)
             self._refresh_history()
@@ -464,6 +479,13 @@ class StudentProfilePage(QWidget):
             return
         items = self._profile.hopes
         if index < len(items):
+            reply = QMessageBox.question(
+                self, "Confirm Delete",
+                f"Are you sure you want to remove this goal?\n\n\"{items[index].get('text', '')}\"",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
             items.pop(index)
             self._save_json_field("hopes", items)
             self._refresh_goals()
@@ -517,6 +539,13 @@ class StudentProfilePage(QWidget):
             return
         items = self._profile.stakeholders
         if index < len(items):
+            reply = QMessageBox.question(
+                self, "Confirm Delete",
+                f"Are you sure you want to remove this stakeholder?\n\n\"{items[index].get('text', '')}\"",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
             items.pop(index)
             self._save_json_field("stakeholders", items)
             self._refresh_stakeholders()
@@ -548,6 +577,7 @@ class StudentProfilePage(QWidget):
         user = self.auth.get_current_user()
         if not name or not user:
             QMessageBox.warning(self, "Missing Info", "Please enter a name.")
+            self._name_input.setFocus()
             return
 
         session = self.db.get_session()

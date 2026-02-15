@@ -5,7 +5,7 @@ import asyncio
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QComboBox, QLineEdit, QCheckBox, QFormLayout,
-    QStackedWidget, QScrollArea,
+    QStackedWidget, QScrollArea, QMessageBox,
 )
 from PyQt6.QtCore import Qt
 
@@ -354,6 +354,14 @@ class AISettingsPage(QWidget):
         self._test_status.setStyleSheet(f"font-size: 13px; color: {c['success']};")
 
     def _on_clear(self):
+        reply = QMessageBox.question(
+            self, "Confirm Clear",
+            "Are you sure you want to clear all AI configuration?\n\n"
+            "This will reset provider settings and remove any saved API keys.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
         from ai.ai_settings_store import clear_ai_settings
         clear_ai_settings()
 
