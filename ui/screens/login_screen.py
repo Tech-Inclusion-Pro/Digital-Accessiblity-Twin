@@ -51,7 +51,8 @@ class PasswordRecoveryDialog(QDialog):
         self.username = None
         self.has_q2 = False
         self.setWindowTitle("Recover Password")
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(420)
+        self.setMaximumWidth(600)
         self.setAccessibleName("Password recovery dialog")
         self._build()
 
@@ -92,6 +93,16 @@ class PasswordRecoveryDialog(QDialog):
 
     # ── sections ──
 
+    def _recovery_input_style(self, c):
+        return f"""
+            QLineEdit {{
+                background-color: {c['dark_input']}; color: {c['text']};
+                border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
+                padding: 8px 14px; font-size: 13pt;
+            }}
+            QLineEdit:focus {{ border: 2px solid {c['primary']}; }}
+        """
+
     def _build_email_section(self, c):
         layout = QVBoxLayout(self.email_section)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -103,7 +114,8 @@ class PasswordRecoveryDialog(QDialog):
         self.recovery_username.setPlaceholderText("Your username")
         self.recovery_username.setAccessibleName("Username for recovery")
         self.recovery_username.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.recovery_username.setMinimumHeight(44)
+        self.recovery_username.setMinimumHeight(48)
+        self.recovery_username.setStyleSheet(self._recovery_input_style(c))
         layout.addWidget(self.recovery_username)
         self.email_error = QLabel("")
         self.email_error.setStyleSheet(f"color: {c['error']};")
@@ -112,13 +124,13 @@ class PasswordRecoveryDialog(QDialog):
         btn = QPushButton("Find Account")
         btn.setAccessibleName("Find account")
         btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        btn.setMinimumHeight(44)
+        btn.setMinimumHeight(48)
         btn.setStyleSheet(f"""
             QPushButton {{
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
                     stop:0 {c['primary']}, stop:1 {c['tertiary']});
-                color: white; border: none; border-radius: 8px;
-                padding: 8px 16px; font-weight: bold;
+                color: white; border: none; border-radius: 12px;
+                padding: 8px 16px; font-weight: bold; font-size: 13pt;
             }}
         """)
         btn.clicked.connect(self._on_find)
@@ -135,7 +147,8 @@ class PasswordRecoveryDialog(QDialog):
         self.a1_input.setPlaceholderText("Answer (not case sensitive)")
         self.a1_input.setAccessibleName("Answer to security question 1")
         self.a1_input.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.a1_input.setMinimumHeight(44)
+        self.a1_input.setMinimumHeight(48)
+        self.a1_input.setStyleSheet(self._recovery_input_style(c))
         layout.addWidget(self.a1_input)
         self.q2_label = QLabel("Question 2:")
         self.q2_label.setAccessibleName("Security question 2")
@@ -144,7 +157,8 @@ class PasswordRecoveryDialog(QDialog):
         self.a2_input.setPlaceholderText("Answer (not case sensitive)")
         self.a2_input.setAccessibleName("Answer to security question 2")
         self.a2_input.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.a2_input.setMinimumHeight(44)
+        self.a2_input.setMinimumHeight(48)
+        self.a2_input.setStyleSheet(self._recovery_input_style(c))
         layout.addWidget(self.a2_input)
         self.q_error = QLabel("")
         self.q_error.setStyleSheet(f"color: {c['error']};")
@@ -153,13 +167,13 @@ class PasswordRecoveryDialog(QDialog):
         btn = QPushButton("Verify Answers")
         btn.setAccessibleName("Verify security answers")
         btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        btn.setMinimumHeight(44)
+        btn.setMinimumHeight(48)
         btn.setStyleSheet(f"""
             QPushButton {{
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
                     stop:0 {c['primary']}, stop:1 {c['tertiary']});
-                color: white; border: none; border-radius: 8px;
-                padding: 8px 16px; font-weight: bold;
+                color: white; border: none; border-radius: 12px;
+                padding: 8px 16px; font-weight: bold; font-size: 13pt;
             }}
         """)
         btn.clicked.connect(self._on_verify)
@@ -175,14 +189,16 @@ class PasswordRecoveryDialog(QDialog):
         self.new_pw.setAccessibleName("New password")
         self.new_pw.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.new_pw.setEchoMode(QLineEdit.EchoMode.Password)
-        self.new_pw.setMinimumHeight(44)
+        self.new_pw.setMinimumHeight(48)
+        self.new_pw.setStyleSheet(self._recovery_input_style(c))
         layout.addWidget(self.new_pw)
         self.confirm_pw = QLineEdit()
         self.confirm_pw.setPlaceholderText("Confirm new password")
         self.confirm_pw.setAccessibleName("Confirm new password")
         self.confirm_pw.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.confirm_pw.setEchoMode(QLineEdit.EchoMode.Password)
-        self.confirm_pw.setMinimumHeight(44)
+        self.confirm_pw.setMinimumHeight(48)
+        self.confirm_pw.setStyleSheet(self._recovery_input_style(c))
         layout.addWidget(self.confirm_pw)
         self.r_error = QLabel("")
         self.r_error.setStyleSheet(f"color: {c['error']};")
@@ -191,13 +207,13 @@ class PasswordRecoveryDialog(QDialog):
         btn = QPushButton("Reset Password")
         btn.setAccessibleName("Reset password")
         btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        btn.setMinimumHeight(44)
+        btn.setMinimumHeight(48)
         btn.setStyleSheet(f"""
             QPushButton {{
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
                     stop:0 {c['primary']}, stop:1 {c['tertiary']});
-                color: white; border: none; border-radius: 8px;
-                padding: 8px 16px; font-weight: bold;
+                color: white; border: none; border-radius: 12px;
+                padding: 8px 16px; font-weight: bold; font-size: 13pt;
             }}
         """)
         btn.clicked.connect(self._on_reset)
@@ -324,7 +340,9 @@ class LoginScreen(QWidget):
         # Card container — responsive width
         self.container = QFrame()
         self.container.setObjectName("loginCard")
-        self.container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        self.container.setMinimumWidth(420)
+        self.container.setMaximumWidth(600)
+        self.container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         clayout = QVBoxLayout(self.container)
         clayout.setContentsMargins(36, 28, 36, 28)
         clayout.setSpacing(12)
@@ -571,8 +589,7 @@ class LoginScreen(QWidget):
                 widget.setStyleSheet(f"""
                     QLineEdit {{
                         background: transparent; border: none;
-                        color: {c['text']}; padding: 4px 14px; font-size: 12pt;
-                        min-height: 0;
+                        color: {c['text']}; padding: 8px 14px; font-size: 13pt;
                     }}
                 """)
             elif kind == "eye_btn":
@@ -693,6 +710,7 @@ class LoginScreen(QWidget):
         pw_wrapper = QFrame()
         pw_wrapper.setObjectName(f"{role}PwWrapper")
         pw_wrapper.setMinimumHeight(48)
+        pw_wrapper.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         pw_wrapper.setStyleSheet(f"""
             QFrame#{role}PwWrapper {{
                 background-color: {c['dark_input']};
@@ -710,11 +728,11 @@ class LoginScreen(QWidget):
         password.setEchoMode(QLineEdit.EchoMode.Password)
         password.setAccessibleName(f"{role.title()} login password")
         password.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        password.setMinimumHeight(44)
         password.setStyleSheet(f"""
             QLineEdit {{
                 background: transparent; border: none;
-                color: {c['text']}; padding: 4px 14px; font-size: 12pt;
-                min-height: 0;
+                color: {c['text']}; padding: 8px 14px; font-size: 13pt;
             }}
         """)
         self._styled_widgets.append({"kind": "pw_input", "widget": password})
@@ -807,7 +825,7 @@ class LoginScreen(QWidget):
 
         sc = QWidget()
         layout = QVBoxLayout(sc)
-        layout.setContentsMargins(24, 20, 24, 32)
+        layout.setContentsMargins(24, 20, 24, 24)
         layout.setSpacing(4)
 
         # Role selector
@@ -847,6 +865,7 @@ class LoginScreen(QWidget):
         pw_wrap = QFrame()
         pw_wrap.setObjectName("regPwWrap")
         pw_wrap.setMinimumHeight(48)
+        pw_wrap.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         pw_wrap.setStyleSheet(f"""
             QFrame#regPwWrap {{
                 background-color: {c['dark_input']};
@@ -863,11 +882,11 @@ class LoginScreen(QWidget):
         self.reg_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.reg_password.setAccessibleName("Create password")
         self.reg_password.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.reg_password.setMinimumHeight(44)
         self.reg_password.setStyleSheet(f"""
             QLineEdit {{
                 background: transparent; border: none;
-                color: {c['text']}; padding: 4px 14px; font-size: 12pt;
-                min-height: 0;
+                color: {c['text']}; padding: 8px 14px; font-size: 13pt;
             }}
         """)
         self._styled_widgets.append({"kind": "pw_input", "widget": self.reg_password})
@@ -991,11 +1010,12 @@ class LoginScreen(QWidget):
     @staticmethod
     def _apply_input_style(w: QLineEdit, c: dict):
         w.setMinimumHeight(48)
+        w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         w.setStyleSheet(f"""
             QLineEdit {{
                 background-color: {c['dark_input']}; color: {c['text']};
                 border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
-                padding: 4px 14px; font-size: 12pt; min-height: 0;
+                padding: 8px 14px; font-size: 13pt;
             }}
             QLineEdit:focus {{ border: 2px solid {c['primary']}; }}
         """)
@@ -1003,16 +1023,18 @@ class LoginScreen(QWidget):
     @staticmethod
     def _apply_combo_style(w: QComboBox, c: dict):
         w.setMinimumHeight(48)
+        w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         w.setStyleSheet(f"""
             QComboBox {{
                 background-color: {c['dark_input']}; color: {c['text']};
                 border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
-                padding: 4px 14px; font-size: 12pt;
+                padding: 8px 14px; font-size: 13pt;
             }}
             QComboBox:focus {{ border: 2px solid {c['primary']}; }}
             QComboBox QAbstractItemView {{
                 background-color: {c['dark_card']}; color: {c['text']};
                 selection-background-color: {c['primary']};
+                font-size: 13pt;
             }}
         """)
 
