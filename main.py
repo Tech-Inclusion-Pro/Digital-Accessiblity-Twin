@@ -11,7 +11,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QLocale
 from PyQt6.QtGui import QPalette, QColor
 
 from config.settings import COLORS, APP_SETTINGS
@@ -52,6 +52,9 @@ def main():
     )
 
     app = QApplication(sys.argv)
+
+    # WCAG 3.1.1 — declare the application language
+    QLocale.setDefault(QLocale(QLocale.Language.English, QLocale.Country.UnitedStates))
 
     app.setApplicationName(APP_SETTINGS["app_name"])
     app.setApplicationVersion(APP_SETTINGS["version"])
