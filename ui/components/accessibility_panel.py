@@ -2,7 +2,7 @@
 
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QCheckBox, QPushButton, QGroupBox, QFormLayout,
+    QCheckBox, QPushButton, QGroupBox, QFormLayout, QSpinBox,
 )
 from PyQt6.QtCore import Qt
 
@@ -55,6 +55,37 @@ class AccessibilityPanel(QDialog):
         font_form.addRow(self.dyslexia_cb)
 
         layout.addWidget(font_group)
+
+        # -- Text Spacing (WCAG 1.4.12) --
+        spacing_group = QGroupBox("Text Spacing")
+        spacing_group.setAccessibleName("Text spacing settings")
+        spacing_form = QFormLayout(spacing_group)
+
+        self.letter_spacing_spin = QSpinBox()
+        self.letter_spacing_spin.setAccessibleName("Letter spacing in pixels")
+        self.letter_spacing_spin.setRange(0, 8)
+        self.letter_spacing_spin.setSuffix(" px")
+        self.letter_spacing_spin.setValue(self.a11y.letter_spacing)
+        self.letter_spacing_spin.setFixedHeight(36)
+        spacing_form.addRow("Letter Spacing:", self.letter_spacing_spin)
+
+        self.word_spacing_spin = QSpinBox()
+        self.word_spacing_spin.setAccessibleName("Word spacing in pixels")
+        self.word_spacing_spin.setRange(0, 12)
+        self.word_spacing_spin.setSuffix(" px")
+        self.word_spacing_spin.setValue(self.a11y.word_spacing)
+        self.word_spacing_spin.setFixedHeight(36)
+        spacing_form.addRow("Word Spacing:", self.word_spacing_spin)
+
+        self.line_height_spin = QSpinBox()
+        self.line_height_spin.setAccessibleName("Extra line height in pixels")
+        self.line_height_spin.setRange(0, 12)
+        self.line_height_spin.setSuffix(" px")
+        self.line_height_spin.setValue(self.a11y.line_height)
+        self.line_height_spin.setFixedHeight(36)
+        spacing_form.addRow("Line Height Extra:", self.line_height_spin)
+
+        layout.addWidget(spacing_group)
 
         # -- Colors --
         color_group = QGroupBox("Colors & Contrast")
@@ -152,6 +183,9 @@ class AccessibilityPanel(QDialog):
     def _apply(self):
         self.a11y.set_font_scale(self.font_combo.currentData())
         self.a11y.set_dyslexia_font(self.dyslexia_cb.isChecked())
+        self.a11y.set_letter_spacing(self.letter_spacing_spin.value())
+        self.a11y.set_word_spacing(self.word_spacing_spin.value())
+        self.a11y.set_line_height(self.line_height_spin.value())
         self.a11y.set_high_contrast(self.high_contrast_cb.isChecked())
         self.a11y.set_color_blind_mode(self.cb_combo.currentData())
         self.a11y.set_custom_cursor(self.cursor_combo.currentData())
