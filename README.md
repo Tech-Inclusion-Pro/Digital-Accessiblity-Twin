@@ -160,6 +160,59 @@ Every AI feature includes a "How was this decided?" button that opens a transpar
 - **Model Confidence** — honest disclosure that AI outputs are statistical and may contain inaccuracies
 - **Warnings & Limitations** — specific caveats for each feature (e.g., session drift, data volume effects)
 
+### Voice Input (Speech-to-Text)
+Every text input field across the application includes a microphone button for voice dictation:
+
+- **Powered by faster-whisper** — local speech-to-text processing, no audio leaves your device
+- **One-time model download** — the STT model (~75 MB for "tiny") downloads automatically on first use and is cached locally for offline use
+- **Available everywhere** — microphone buttons appear next to profile inputs, experience/implementation logs, chat inputs, evaluation descriptions, report guidance, and edit dialogs
+- **Platform-specific error help** — if the model download fails, the dialog shows detailed troubleshooting instructions specific to your operating system (Mac, Windows, or Linux) with exact terminal commands
+
+### Timeline View & Progress Charts
+Both student and teacher Tracking pages include interactive QPainter-based charts that visualize logged data:
+
+**Student Tracking:**
+- **Activity Timeline** — horizontal timeline with colored dots showing each logged experience chronologically (scrollable, up to 15 entries)
+- **Effectiveness Over Time** — line chart with Y-axis 1-5 showing rating trends extracted from outcome notes (include "Effectiveness rated: 4/5" in notes to track)
+- **Support Category Breakdown** — horizontal bar chart showing log counts per support category
+
+**Teacher Tracking:**
+- **Implementation Timeline** — horizontal timeline showing each implementation with student name and support category
+- **Activity by Student** — horizontal bar chart showing implementation counts per student
+- **Implementation Frequency** — horizontal bar chart showing weekly activity counts
+
+All charts use the brand color palette, respect accessibility color overrides, and gracefully show EmptyState messages when no data exists.
+
+### Step-by-Step Tutorial
+A built-in tutorial accessible from the sidebar walks users through every feature:
+
+- **Role-aware content** — students see 8 steps, teachers see 9 steps, each tailored to their specific features
+- **Previous/Next navigation** — move through steps at your own pace with dot indicators showing progress
+- **Covers every feature** — profile setup, AI configuration, logging, tracking charts, AI insights, export, accessibility settings, and keyboard shortcuts
+- **Detailed instructions** — each step includes numbered instructions with specific UI directions (e.g., "Click 'My Profile' in the left sidebar")
+
+### Contextual Help System
+The "?" help button provides detailed, context-aware guidance following a consistent 3-part format:
+
+1. **What is the issue** — describes what the feature does and what might be wrong
+2. **How to fix it** — explains the solution approach
+3. **Step-by-step instructions** — numbered instructions with specific actions
+
+Available for 10 contexts: general, profile, AI settings, log experience, tracking, insights, export, evaluate, students, and speech-to-text. AI-related help dialogs include an "Open Full AI Setup Guide" button.
+
+### AI Model Setup Guide
+A comprehensive tabbed guide accessible from help buttons and the tutorial, with platform-specific instructions:
+
+| Tab | Content |
+|-----|---------|
+| **Mac (Ollama)** | Homebrew install, .dmg download, Terminal commands, Apple Silicon notes |
+| **Windows (Ollama)** | Installer download, system tray usage, Command Prompt commands, NVIDIA notes |
+| **Linux (Ollama)** | curl install script, systemd service management, GPU setup links |
+| **LM Studio (All)** | GUI-based setup for Mac/Windows/Linux with .AppImage instructions |
+| **Cloud (API Key)** | OpenAI and Anthropic signup, API key creation, dual consent setup |
+
+Each tab includes troubleshooting for common errors: connection refused, model not found, permission denied, SSL certificate errors, and firewall configuration.
+
 ### Outline Icon System
 All UI icons use simple geometric outline characters (Unicode line-drawing symbols) instead of colored emoji:
 - Renders consistently across all platforms and font configurations
@@ -312,6 +365,9 @@ Once installed, launch from **Finder**, **Spotlight** (search "AccessTwin"), or 
 | cryptography | latest | AES-256 field encryption |
 | python-docx | latest | Word document generation (DOCX export) |
 | openpyxl | latest | Excel workbook generation (XLSX export) |
+| faster-whisper | latest | Local speech-to-text engine |
+| sounddevice | latest | Microphone audio capture |
+| numpy | latest | Audio processing for STT |
 
 ---
 
@@ -377,6 +433,11 @@ accesstwin/
 │   ├── pour_principles.json         # POUR principles reference
 │   ├── support_templates.json       # Pre-built support templates
 │   └── color_palettes.json          # Color-blind safe palettes
+├── stt/
+│   ├── __init__.py
+│   ├── engine.py                    # faster-whisper STT engine
+│   ├── stt_settings_store.py        # STT model settings persistence
+│   └── workers.py                   # Background download & transcription workers
 ├── models/
 │   ├── database.py                  # DatabaseManager, SQLAlchemy setup
 │   ├── auth.py                      # AuthManager with role enforcement
@@ -438,16 +499,24 @@ accesstwin/
 │   └── components/
 │       ├── accessibility_panel.py   # Full accessibility preferences dialog
 │       ├── accessibility_toolbar.py # Quick-access font/contrast/color bar
+│       ├── ai_setup_guide_dialog.py # Platform-specific AI setup guide (Mac/Win/Linux)
 │       ├── breadcrumb.py            # Navigation breadcrumb trail
+│       ├── chart_utils.py           # Shared chart helpers and color palette
 │       ├── edit_item_dialog.py      # Edit item text and priority dialog
 │       ├── empty_state.py           # Empty state placeholder
-│       ├── help_button.py           # Contextual help button
+│       ├── help_button.py           # Contextual help button with 3-part guidance
+│       ├── horizontal_bar_chart.py  # QPainter horizontal bar chart widget
+│       ├── line_chart.py            # QPainter line chart for effectiveness trends
+│       ├── mic_button.py            # Microphone button for voice input (STT)
+│       ├── model_download_dialog.py # STT model download with error troubleshooting
 │       ├── profile_item_card.py     # Card widget for profile items with priority
 │       ├── rating_widget.py         # Star rating input widget
 │       ├── shortcuts_dialog.py      # Keyboard shortcuts reference (Ctrl+/)
 │       ├── stat_card.py             # Dashboard metric card
 │       ├── support_card.py          # Support entry card with UDL/POUR tags
-│       └── transparency_dialog.py   # AI transparency "How was this decided?" dialog
+│       ├── timeline_chart.py        # QPainter horizontal timeline widget
+│       ├── transparency_dialog.py   # AI transparency "How was this decided?" dialog
+│       └── tutorial_dialog.py       # Step-by-step tutorial walkthrough
 ├── utils/
 │   ├── encryption.py                # AES-256 Fernet encryption manager
 │   └── validators.py                # Input validation (username, password, email)
@@ -578,7 +647,11 @@ python -m pytest tests/ -v
 - [x] Demo data seeder with 5 student personas and 2 teacher accounts
 - [x] Outline icon system (all icons replaced with geometric line-drawing characters)
 - [ ] Bundled fonts (OpenDyslexic)
-- [ ] Tutorial system
+- [x] Tutorial system with role-aware step-by-step walkthrough
+- [x] Contextual help system with 3-part guidance format
+- [x] AI model setup guide with platform-specific instructions (Mac/Windows/Linux)
+- [x] Voice input (speech-to-text) with microphone buttons on all text fields
+- [x] Timeline view and progress charts (QPainter-based, no external dependencies)
 
 ### Phase 3 (Current) — Teacher Tools & AI Analysis
 - [x] Document upload and management
@@ -598,13 +671,39 @@ python -m pytest tests/ -v
 
 ### Phase 4 — Collaboration & Reporting
 - [ ] Student-teacher profile sharing
-- [ ] Progress reporting and analytics
+- [x] Progress reporting and analytics
 - [ ] Multi-student batch analysis
 - [ ] Institutional admin features
 
 ---
 
 ## Changelog
+
+### v2.3.0 — Voice Input, Progress Charts, Tutorial & Help System (2026-02-15)
+
+**Added**
+- **Speech-to-text voice input** — faster-whisper-based local STT engine with MicButton widget; microphone buttons added to all text input fields across 9 pages (profile, logging, insights chat, evaluate, export guidance, edit dialogs, coach dialog); one-time model download (~75 MB) with local caching for offline use
+- **Model download dialog with error help** (`ui/components/model_download_dialog.py`) — platform-aware troubleshooting when STT model downloads fail; detects Mac/Windows/Linux and shows tailored instructions with exact terminal commands, pip install steps, firewall checks, and retry button
+- **Chart utility helpers** (`ui/components/chart_utils.py`) — shared helpers: CHART_PALETTE (8 brand-derived colors), parse_effectiveness_rating(), group_logs_by_week(), group_logs_by_category(), and build_chart_card()
+- **Horizontal bar chart** (`ui/components/horizontal_bar_chart.py`) — QPainter widget with labels, colored rounded bars, and values; dynamic height (28px per row); used for category breakdowns, student activity, and weekly frequency
+- **Timeline chart** (`ui/components/timeline_chart.py`) — QPainter horizontal timeline with colored dots, labels above, dates below; fixed 160px height with horizontal scrolling; capped at 15 entries
+- **Line chart** (`ui/components/line_chart.py`) — QPainter line chart with Y-axis 1-5, dotted grid lines, connected dots, and gradient fill; used for effectiveness rating trends
+- **Student tracking charts** — Activity Timeline, Effectiveness Over Time (line chart), and Support Category Breakdown (bar chart) replace the "coming soon" placeholder; queries up to 50 logs with batch support loading
+- **Teacher tracking charts** — Implementation Timeline (with student names), Activity by Student (bar chart), and Implementation Frequency (weekly bar chart) replace the "coming soon" placeholder; batch-loads profiles and supports
+- **Step-by-step tutorial dialog** (`ui/components/tutorial_dialog.py`) — role-aware walkthrough with Previous/Next navigation and dot step indicators; 8 student steps and 9 teacher steps covering every feature with detailed numbered instructions
+- **AI model setup guide** (`ui/components/ai_setup_guide_dialog.py`) — tabbed dialog with platform-specific instructions for Mac (Ollama), Windows (Ollama), Linux (Ollama), LM Studio (all platforms), and Cloud providers (OpenAI/Anthropic); each tab follows the 3-part format with troubleshooting
+- **Contextual help system** (`ui/components/help_button.py`) — replaces Phase 2 stub with real help for 10 contexts; each entry provides: 1) what is the issue, 2) how to fix it, 3) step-by-step instructions; AI-related contexts include "Open Full AI Setup Guide" button
+- **Tutorial button in sidebar** — "? Tutorial" button added between nav items and Settings in the sidebar; emits tutorial_requested signal connected to TutorialDialog in both dashboards
+
+**Changed**
+- **Student tracking page** — rewritten with scrollable layout containing activity list + 3 interactive charts; EmptyState shown per chart when no data exists
+- **Teacher tracking page** — rewritten with scrollable layout containing activity list + 3 interactive charts; EmptyState shown per chart when no data exists
+- **Sidebar** — added tutorial_requested signal and "? Tutorial" button with primary_text color
+- **Student dashboard** — connected tutorial_requested to open TutorialDialog(role="student")
+- **Teacher dashboard** — connected tutorial_requested to open TutorialDialog(role="teacher")
+- **Dependencies** — added faster-whisper, sounddevice, numpy to requirements.txt
+
+---
 
 ### v2.2.0 — Insight Saving & Chat, Data Export & Save Login (2026-02-15)
 
