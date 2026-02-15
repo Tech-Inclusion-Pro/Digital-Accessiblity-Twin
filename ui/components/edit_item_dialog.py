@@ -37,26 +37,29 @@ class EditItemDialog(QDialog):
         layout.setSpacing(10)
 
         # Text input
-        text_label = QLabel("Item text:")
+        text_label = QLabel("&Item text:")
         text_label.setStyleSheet(f"font-size: 13px; color: {c['text']};")
-        layout.addWidget(text_label)
 
         self._text_edit = QTextEdit()
         self._text_edit.setPlainText(text)
         self._text_edit.setAccessibleName("Item text")
         self._text_edit.setFixedHeight(90)
+        text_label.setBuddy(self._text_edit)
+        layout.addWidget(text_label)
+
         text_row = QHBoxLayout()
         text_row.addWidget(self._text_edit, stretch=1)
         text_row.addWidget(MicButton(target=self._text_edit), alignment=Qt.AlignmentFlag.AlignTop)
         layout.addLayout(text_row)
 
         # Priority combo
-        priority_label = QLabel("Priority:")
+        priority_label = QLabel("&Priority:")
         priority_label.setStyleSheet(f"font-size: 13px; color: {c['text']};")
         layout.addWidget(priority_label)
 
         self._priority_combo = QComboBox()
         self._priority_combo.setAccessibleName("Priority level")
+        priority_label.setBuddy(self._priority_combo)
         for value, display in PRIORITY_CHOICES:
             self._priority_combo.addItem(display, value)
         # Select current priority

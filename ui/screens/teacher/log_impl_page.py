@@ -59,23 +59,29 @@ class TeacherLogImplPage(QWidget):
         form_layout.setSpacing(12)
 
         # Select student
-        form_layout.addWidget(QLabel("Student:"))
+        student_label = QLabel("&Student:")
         self._student_combo = QComboBox()
         self._student_combo.setAccessibleName("Select a student")
         self._student_combo.setFixedHeight(44)
         self._student_combo.currentIndexChanged.connect(self._on_student_changed)
+        student_label.setBuddy(self._student_combo)
+        form_layout.addWidget(student_label)
         form_layout.addWidget(self._student_combo)
 
         # Select support
-        form_layout.addWidget(QLabel("Support:"))
+        support_label = QLabel("S&upport:")
         self._support_combo = QComboBox()
         self._support_combo.setAccessibleName("Select a support")
         self._support_combo.setFixedHeight(44)
+        support_label.setBuddy(self._support_combo)
+        form_layout.addWidget(support_label)
         form_layout.addWidget(self._support_combo)
 
         # Implementation notes
-        form_layout.addWidget(QLabel("Implementation Notes:"))
+        impl_label = QLabel("&Implementation Notes:")
         self._impl_notes = QTextEdit()
+        impl_label.setBuddy(self._impl_notes)
+        form_layout.addWidget(impl_label)
         self._impl_notes.setPlaceholderText("How did you implement this support?")
         self._impl_notes.setAccessibleName("Implementation notes")
         self._impl_notes.setMaximumHeight(80)
@@ -85,8 +91,10 @@ class TeacherLogImplPage(QWidget):
         form_layout.addLayout(impl_row)
 
         # Outcome notes
-        form_layout.addWidget(QLabel("Outcome Notes:"))
+        outcome_label = QLabel("&Outcome Notes:")
         self._outcome_notes = QTextEdit()
+        outcome_label.setBuddy(self._outcome_notes)
+        form_layout.addWidget(outcome_label)
         self._outcome_notes.setPlaceholderText("What was the observed outcome?")
         self._outcome_notes.setAccessibleName("Outcome notes")
         self._outcome_notes.setMaximumHeight(80)
@@ -163,6 +171,7 @@ class TeacherLogImplPage(QWidget):
 
         if not profile_id:
             QMessageBox.warning(self, "Missing", "Please select a student.")
+            self._student_combo.setFocus()
             return
 
         session = self.db.get_session()

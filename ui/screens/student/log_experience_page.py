@@ -56,10 +56,12 @@ class StudentLogExperiencePage(QWidget):
         form_layout.setSpacing(12)
 
         # Select support
-        form_layout.addWidget(QLabel("Select Support:"))
+        support_label = QLabel("&Select Support:")
         self._support_combo = QComboBox()
         self._support_combo.setAccessibleName("Select a support to rate")
         self._support_combo.setFixedHeight(44)
+        support_label.setBuddy(self._support_combo)
+        form_layout.addWidget(support_label)
         form_layout.addWidget(self._support_combo)
 
         # Rating
@@ -67,8 +69,10 @@ class StudentLogExperiencePage(QWidget):
         form_layout.addWidget(self._rating)
 
         # Notes
-        form_layout.addWidget(QLabel("Notes:"))
+        notes_label = QLabel("&Notes:")
         self._notes = QTextEdit()
+        notes_label.setBuddy(self._notes)
+        form_layout.addWidget(notes_label)
         self._notes.setPlaceholderText("How is this support working for you?")
         self._notes.setAccessibleName("Experience notes")
         self._notes.setMaximumHeight(100)
@@ -129,6 +133,7 @@ class StudentLogExperiencePage(QWidget):
 
         if rating == 0:
             QMessageBox.warning(self, "Missing Rating", "Please select a rating (1-5).")
+            self._rating.setFocus()
             return
 
         session = self.db.get_session()
