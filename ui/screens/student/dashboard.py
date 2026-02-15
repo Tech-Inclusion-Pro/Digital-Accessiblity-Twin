@@ -67,6 +67,7 @@ class StudentDashboard(QWidget):
         self._sidebar.nav_clicked.connect(self._navigate)
         self._sidebar.logout_requested.connect(self.logout_requested.emit)
         self._sidebar.settings_requested.connect(self._open_settings)
+        self._sidebar.tutorial_requested.connect(self._open_tutorial)
         outer.addWidget(self._sidebar)
 
         # Right content area
@@ -126,6 +127,11 @@ class StudentDashboard(QWidget):
     def _open_settings(self):
         from ui.components.accessibility_panel import AccessibilityPanel
         dlg = AccessibilityPanel(self)
+        dlg.exec()
+
+    def _open_tutorial(self):
+        from ui.components.tutorial_dialog import TutorialDialog
+        dlg = TutorialDialog(role="student", parent=self)
         dlg.exec()
 
     def refresh_data(self):

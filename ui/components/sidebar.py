@@ -27,6 +27,7 @@ class Sidebar(QWidget):
     nav_clicked = pyqtSignal(str)  # emits item key
     logout_requested = pyqtSignal()
     settings_requested = pyqtSignal()
+    tutorial_requested = pyqtSignal()
 
     def __init__(self, role: str, items: list[dict], parent=None):
         """
@@ -97,6 +98,23 @@ class Sidebar(QWidget):
             layout.addWidget(btn)
 
         layout.addStretch()
+
+        # Tutorial button
+        tutorial_btn = QPushButton("  ?  Tutorial")
+        tutorial_btn.setAccessibleName("Open tutorial")
+        tutorial_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        tutorial_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        tutorial_btn.setFixedHeight(44)
+        tutorial_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: transparent; border: none; border-radius: 8px;
+                color: {c['primary_text']}; text-align: left; padding-left: 12px;
+                font-size: 14px;
+            }}
+            QPushButton:hover {{ background: {c['dark_hover']}; color: {c['text']}; }}
+        """)
+        tutorial_btn.clicked.connect(self.tutorial_requested.emit)
+        layout.addWidget(tutorial_btn)
 
         # Settings button
         settings_btn = QPushButton("  \u229E  Settings")
