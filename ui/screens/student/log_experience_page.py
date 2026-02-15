@@ -42,7 +42,7 @@ class StudentLogExperiencePage(QWidget):
 
         # Empty state
         self._empty = EmptyState(
-            icon_text="\U0001F4DD",
+            icon_text="\u270E",
             message="No supports to rate. Add supports in your profile first.",
         )
         self._empty.setVisible(False)

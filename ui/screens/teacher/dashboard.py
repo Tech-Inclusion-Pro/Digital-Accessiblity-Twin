@@ -14,11 +14,11 @@ from ui.screens.teacher.log_impl_page import TeacherLogImplPage
 from ui.screens.teacher.tracking_page import TeacherTrackingPage
 
 NAV_ITEMS = [
-    {"key": "home", "icon": "\U0001F3E0", "label": "Home"},
-    {"key": "students", "icon": "\U0001F465", "label": "Students"},
-    {"key": "evaluate", "icon": "\U0001F4C4", "label": "Evaluate"},
-    {"key": "log", "icon": "\U0001F4DD", "label": "Log Implementation"},
-    {"key": "tracking", "icon": "\U0001F4CA", "label": "Tracking"},
+    {"key": "home", "icon": "\u2302", "label": "Home"},
+    {"key": "students", "icon": "\u25C7", "label": "Students"},
+    {"key": "evaluate", "icon": "\u25B3", "label": "Evaluate"},
+    {"key": "log", "icon": "\u270E", "label": "Log Implementation"},
+    {"key": "tracking", "icon": "\u2630", "label": "Tracking"},
 ]
 
 PAGE_MAP = {
@@ -43,10 +43,11 @@ class TeacherDashboard(QWidget):
 
     logout_requested = pyqtSignal()
 
-    def __init__(self, db_manager, auth_manager, parent=None):
+    def __init__(self, db_manager, auth_manager, backend_manager=None, parent=None):
         super().__init__(parent)
         self.db = db_manager
         self.auth = auth_manager
+        self.backend_manager = backend_manager
         self._build_ui()
 
     def _build_ui(self):
@@ -72,11 +73,11 @@ class TeacherDashboard(QWidget):
 
         self._stack = QStackedWidget()
 
-        self._home_page = TeacherHomePage(self.db, self.auth)
+        self._home_page = TeacherHomePage(self.db, self.auth, self.backend_manager)
         self._home_page.navigate_to.connect(self._navigate)
         self._stack.addWidget(self._home_page)
 
-        self._students_page = TeacherStudentsPage(self.db, self.auth)
+        self._students_page = TeacherStudentsPage(self.db, self.auth, self.backend_manager)
         self._stack.addWidget(self._students_page)
 
         self._evaluate_page = TeacherEvaluatePage(self.db, self.auth)

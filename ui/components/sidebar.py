@@ -99,7 +99,7 @@ class Sidebar(QWidget):
         layout.addStretch()
 
         # Settings button
-        settings_btn = QPushButton("  \u2699  Settings")
+        settings_btn = QPushButton("  \u229E  Settings")
         settings_btn.setAccessibleName("Settings")
         settings_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         settings_btn.setCursor(Qt.CursorShape.PointingHandCursor)

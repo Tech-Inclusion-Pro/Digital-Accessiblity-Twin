@@ -56,7 +56,7 @@ class StudentTrackingPage(QWidget):
         layout.addWidget(sep)
 
         timeline_placeholder = EmptyState(
-            icon_text="\U0001F4CA",
+            icon_text="\u2630",
             message="Timeline view and progress charts coming soon.",
         )
         layout.addWidget(timeline_placeholder)

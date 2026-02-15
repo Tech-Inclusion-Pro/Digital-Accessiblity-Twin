@@ -46,7 +46,7 @@ class StudentExportPage(QWidget):
 
         # Empty state
         self._empty = EmptyState(
-            icon_text="\U0001F4E6",
+            icon_text="\u25A1",
             message="No profile to export. Create your profile first.",
         )
         self._empty.setVisible(False)

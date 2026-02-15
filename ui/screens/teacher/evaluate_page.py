@@ -106,7 +106,7 @@ class TeacherEvaluatePage(QWidget):
 
         # AI analysis placeholder
         self._ai_placeholder = EmptyState(
-            icon_text="\U0001F916",
+            icon_text="\u25B3",
             message="AI-powered document analysis coming soon. Documents will be stored for future analysis.",
         )
         layout.addWidget(self._ai_placeholder)

@@ -8,6 +8,13 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
 from models.database import Base
 
 
+def _normalize_item(item):
+    """Ensure an item is a dict with 'text' and 'priority' keys."""
+    if isinstance(item, str):
+        return {"text": item, "priority": "medium"}
+    return item
+
+
 class StudentProfile(Base):
     __tablename__ = "student_profiles"
 
@@ -62,3 +69,19 @@ class StudentProfile(Base):
     @stakeholders.setter
     def stakeholders(self, value: list):
         self.stakeholders_json = json.dumps(value)
+
+    @property
+    def strengths_items(self) -> list:
+        return [_normalize_item(x) for x in self.strengths]
+
+    @property
+    def history_items(self) -> list:
+        return [_normalize_item(x) for x in self.history]
+
+    @property
+    def hopes_items(self) -> list:
+        return [_normalize_item(x) for x in self.hopes]
+
+    @property
+    def stakeholders_items(self) -> list:
+        return [_normalize_item(x) for x in self.stakeholders]

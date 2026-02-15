@@ -57,9 +57,15 @@ class BackendManager:
         return await self._client.test_connection()
 
     async def generate_response(self, user_message: str,
-                                context: dict = None) -> AsyncGenerator[str, None]:
+                                context: dict = None,
+                                system_prompt: str = None,
+                                conversation_history: list = None) -> AsyncGenerator[str, None]:
         if self._client is None:
             yield "No AI backend configured."
             return
-        async for chunk in self._client.generate(user_message, context):
+        async for chunk in self._client.generate(
+            user_message, context,
+            system_prompt=system_prompt,
+            conversation_history=conversation_history,
+        ):
             yield chunk

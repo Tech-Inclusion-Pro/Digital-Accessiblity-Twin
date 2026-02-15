@@ -1,11 +1,11 @@
-"""Teacher students page — list imported student twins, import JSON, view profiles."""
+"""Teacher students page — list imported student twins, import JSON, consult coach."""
 
 import json
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QScrollArea, QGridLayout, QLineEdit, QFileDialog,
-    QDialog, QMessageBox, QListWidget, QListWidgetItem, QTabWidget,
+    QMessageBox,
 )
 from PyQt6.QtCore import Qt
 
@@ -13,18 +13,19 @@ from config.settings import get_colors
 from models.student_profile import StudentProfile
 from models.support import SupportEntry
 from models.document import Document
+from models.tracking import TrackingLog
 from models.evaluation import TwinEvaluation
 from ui.components.empty_state import EmptyState
-from ui.components.support_card import SupportCard
 
 
 class TeacherStudentsPage(QWidget):
-    """List/grid of imported student twins + import + search + view profile."""
+    """List/grid of imported student twins + import + search + consult coach."""
 
-    def __init__(self, db_manager, auth_manager, parent=None):
+    def __init__(self, db_manager, auth_manager, backend_manager=None, parent=None):
         super().__init__(parent)
         self.db = db_manager
         self.auth = auth_manager
+        self.backend_manager = backend_manager
         self._profiles: list = []
         self._build_ui()
 
@@ -69,7 +70,7 @@ class TeacherStudentsPage(QWidget):
 
         # Empty state
         self._empty = EmptyState(
-            icon_text="\U0001F465",
+            icon_text="\u25C7",
             message="No student twins imported yet.",
             action_label="Import Twin",
         )
@@ -214,18 +215,27 @@ class TeacherStudentsPage(QWidget):
         name.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {c['text']};")
         layout.addWidget(name)
 
-        # Quick info
-        strengths_count = len(profile.strengths) if profile.strengths else 0
-        info = QLabel(f"{strengths_count} strengths recorded")
+        # Quick info — show support area count (privacy-safe)
+        session = self.db.get_session()
+        try:
+            category_count = len(set(
+                s.category for s in session.query(SupportEntry).filter(
+                    SupportEntry.profile_id == profile.id,
+                    SupportEntry.status == "active",
+                ).all()
+            ))
+        finally:
+            session.close()
+        info = QLabel(f"{category_count} support areas")
         info.setStyleSheet(f"font-size: 12px; color: {c['text_muted']};")
         layout.addWidget(info)
 
-        view_btn = QPushButton("View Profile")
-        view_btn.setAccessibleName(f"View profile for {profile.name}")
-        view_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        view_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        view_btn.setFixedHeight(32)
-        view_btn.setStyleSheet(f"""
+        coach_btn = QPushButton("Consult Coach")
+        coach_btn.setAccessibleName(f"Consult accessibility coach for {profile.name}")
+        coach_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        coach_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        coach_btn.setFixedHeight(32)
+        coach_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {c['dark_input']}; color: {c['text']};
                 border: 1px solid {c['dark_border']}; border-radius: 6px;
@@ -233,8 +243,8 @@ class TeacherStudentsPage(QWidget):
             }}
             QPushButton:hover {{ background: {c['dark_hover']}; }}
         """)
-        view_btn.clicked.connect(lambda checked, pid=profile.id: self._view_profile(pid))
-        layout.addWidget(view_btn)
+        coach_btn.clicked.connect(lambda checked, pid=profile.id: self._view_profile(pid))
+        layout.addWidget(coach_btn)
 
         card.setFixedHeight(110)
         card.setAccessibleName(f"Student: {profile.name}")
@@ -251,7 +261,15 @@ class TeacherStudentsPage(QWidget):
                 SupportEntry.profile_id == profile_id
             ).all()
 
-            dlg = _ReadOnlyProfileDialog(profile, supports, self)
+            tracking_logs = session.query(TrackingLog).filter(
+                TrackingLog.profile_id == profile_id,
+            ).order_by(TrackingLog.created_at.desc()).limit(20).all()
+
+            from ui.screens.teacher.coach_dialog import CoachDialog
+            dlg = CoachDialog(
+                profile, supports, tracking_logs,
+                self.backend_manager, self,
+            )
             dlg.exec()
         finally:
             session.close()
@@ -287,67 +305,3 @@ class TeacherStudentsPage(QWidget):
             session.close()
 
         self._populate_grid(self._search.text().strip().lower())
-
-
-class _ReadOnlyProfileDialog(QDialog):
-    """Read-only view of a student profile."""
-
-    def __init__(self, profile, supports, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle(f"Profile: {profile.name}")
-        self.setMinimumSize(500, 400)
-        self.setAccessibleName(f"Profile for {profile.name}")
-
-        c = get_colors()
-        layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-
-        title = QLabel(profile.name)
-        title.setStyleSheet(f"font-size: 20px; font-weight: bold; color: {c['text']};")
-        layout.addWidget(title)
-
-        tabs = QTabWidget()
-
-        # Strengths
-        strengths_w = QListWidget()
-        for s in (profile.strengths or []):
-            strengths_w.addItem(QListWidgetItem(s))
-        tabs.addTab(strengths_w, "Strengths")
-
-        # Supports
-        supports_w = QWidget()
-        sup_layout = QVBoxLayout(supports_w)
-        for s in supports:
-            card = SupportCard(s)
-            sup_layout.addWidget(card)
-        sup_layout.addStretch()
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(supports_w)
-        tabs.addTab(scroll, "Supports")
-
-        # History
-        history_w = QListWidget()
-        for h in (profile.history or []):
-            history_w.addItem(QListWidgetItem(h))
-        tabs.addTab(history_w, "History")
-
-        # Goals
-        goals_w = QListWidget()
-        for g in (profile.hopes or []):
-            goals_w.addItem(QListWidgetItem(g))
-        tabs.addTab(goals_w, "Goals")
-
-        # Stakeholders
-        stake_w = QListWidget()
-        for s in (profile.stakeholders or []):
-            stake_w.addItem(QListWidgetItem(s))
-        tabs.addTab(stake_w, "Stakeholders")
-
-        layout.addWidget(tabs)
-
-        close_btn = QPushButton("Close")
-        close_btn.setAccessibleName("Close profile dialog")
-        close_btn.setFixedHeight(40)
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn)

@@ -40,21 +40,32 @@ class CloudClient:
             return False, f"Connection failed: {e}"
 
     async def generate(self, user_message: str,
-                       context: dict = None) -> AsyncGenerator[str, None]:
+                       context: dict = None,
+                       system_prompt: str = None,
+                       conversation_history: list = None) -> AsyncGenerator[str, None]:
         if self.provider == "openai":
-            async for chunk in self._generate_openai(user_message):
+            async for chunk in self._generate_openai(
+                user_message, system_prompt=system_prompt,
+                conversation_history=conversation_history,
+            ):
                 yield chunk
         elif self.provider == "anthropic":
-            async for chunk in self._generate_anthropic(user_message):
+            async for chunk in self._generate_anthropic(
+                user_message, system_prompt=system_prompt,
+                conversation_history=conversation_history,
+            ):
                 yield chunk
         else:
             yield f"Provider '{self.provider}' not implemented."
 
-    async def _generate_openai(self, user_message: str) -> AsyncGenerator[str, None]:
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT_STUB},
-            {"role": "user", "content": user_message},
-        ]
+    async def _generate_openai(self, user_message: str,
+                               system_prompt: str = None,
+                               conversation_history: list = None) -> AsyncGenerator[str, None]:
+        sys_msg = system_prompt or SYSTEM_PROMPT_STUB
+        messages = [{"role": "system", "content": sys_msg}]
+        if conversation_history:
+            messages.extend(conversation_history)
+        messages.append({"role": "user", "content": user_message})
         payload = {"model": self.model, "messages": messages, "stream": True}
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -88,12 +99,16 @@ class CloudClient:
         except Exception as e:
             yield f"[Error: {e}]"
 
-    async def _generate_anthropic(self, user_message: str) -> AsyncGenerator[str, None]:
-        messages = [{"role": "user", "content": user_message}]
+    async def _generate_anthropic(self, user_message: str,
+                                   system_prompt: str = None,
+                                   conversation_history: list = None) -> AsyncGenerator[str, None]:
+        sys_msg = system_prompt or SYSTEM_PROMPT_STUB
+        messages = list(conversation_history or [])
+        messages.append({"role": "user", "content": user_message})
         payload = {
             "model": self.model,
             "max_tokens": 4096,
-            "system": SYSTEM_PROMPT_STUB,
+            "system": sys_msg,
             "messages": messages,
             "stream": True,
         }

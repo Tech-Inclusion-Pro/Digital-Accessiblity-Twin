@@ -5,7 +5,7 @@ import json
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTabWidget, QScrollArea, QFormLayout, QLineEdit, QTextEdit,
-    QComboBox, QListWidget, QListWidgetItem, QMessageBox, QGridLayout,
+    QComboBox, QMessageBox, QGridLayout,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 
@@ -14,6 +14,15 @@ from models.student_profile import StudentProfile
 from models.support import SupportEntry
 from ui.components.support_card import SupportCard
 from ui.components.empty_state import EmptyState
+from ui.components.profile_item_card import ProfileItemCard
+from ui.components.edit_item_dialog import EditItemDialog
+
+PRIORITY_CHOICES = [
+    ("low", "Low"),
+    ("medium", "Medium"),
+    ("high", "High"),
+    ("non-negotiable", "Non-Negotiable"),
+]
 
 
 class StudentProfilePage(QWidget):
@@ -80,26 +89,53 @@ class StudentProfilePage(QWidget):
         self._build_goals_tab()
         self._build_stakeholders_tab()
 
-    # -- Strengths Tab --
-    def _build_strengths_tab(self):
+    # ------------------------------------------------------------------
+    # Generic card-tab builder
+    # ------------------------------------------------------------------
+
+    def _build_card_tab(self, tab_name, input_placeholder, input_accessible,
+                        add_accessible, add_callback):
+        """Build a tab with a scrollable card area and an add-item form.
+
+        Returns ``(scroll_layout, line_edit, priority_combo)`` so each tab
+        can store references for its own add / refresh logic.
+        """
         c = get_colors()
         w = QWidget()
         layout = QVBoxLayout(w)
         layout.setSpacing(8)
 
-        self._strengths_list = QListWidget()
-        self._strengths_list.setAccessibleName("Strengths list")
-        layout.addWidget(self._strengths_list, stretch=1)
+        # Scrollable card area
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        container = QWidget()
+        card_layout = QVBoxLayout(container)
+        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.setSpacing(6)
+        card_layout.addStretch()
+        scroll.setWidget(container)
+        layout.addWidget(scroll, stretch=1)
 
+        # Add-item form row
         add_row = QHBoxLayout()
-        self._strength_input = QLineEdit()
-        self._strength_input.setPlaceholderText("Add a strength...")
-        self._strength_input.setAccessibleName("New strength")
-        self._strength_input.setFixedHeight(40)
-        add_row.addWidget(self._strength_input, stretch=1)
+
+        line_edit = QLineEdit()
+        line_edit.setPlaceholderText(input_placeholder)
+        line_edit.setAccessibleName(input_accessible)
+        line_edit.setFixedHeight(40)
+        add_row.addWidget(line_edit, stretch=1)
+
+        priority_combo = QComboBox()
+        priority_combo.setAccessibleName("Priority level")
+        for value, display in PRIORITY_CHOICES:
+            priority_combo.addItem(display, value)
+        priority_combo.setCurrentIndex(1)  # default Medium
+        priority_combo.setFixedHeight(40)
+        add_row.addWidget(priority_combo)
 
         add_btn = QPushButton("Add")
-        add_btn.setAccessibleName("Add strength")
+        add_btn.setAccessibleName(add_accessible)
         add_btn.setFixedHeight(40)
         add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         add_btn.setStyleSheet(f"""
@@ -108,46 +144,81 @@ class StudentProfilePage(QWidget):
                 border: none; border-radius: 8px; padding: 0 16px;
             }}
         """)
-        add_btn.clicked.connect(self._add_strength)
+        add_btn.clicked.connect(add_callback)
         add_row.addWidget(add_btn)
 
-        rm_btn = QPushButton("Remove Selected")
-        rm_btn.setAccessibleName("Remove selected strength")
-        rm_btn.setFixedHeight(40)
-        rm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        rm_btn.clicked.connect(self._remove_strength)
-        add_row.addWidget(rm_btn)
-
         layout.addLayout(add_row)
-        self._tabs.addTab(w, "Strengths")
+        self._tabs.addTab(w, tab_name)
+        return card_layout, line_edit, priority_combo
+
+    def _populate_cards(self, card_layout, items, edit_callback, remove_callback):
+        """Clear *card_layout* and add a ``ProfileItemCard`` for each item."""
+        # Remove existing cards (but keep the trailing stretch)
+        while card_layout.count() > 1:
+            item = card_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        for i, entry in enumerate(items):
+            card = ProfileItemCard(i, entry["text"], entry["priority"])
+            card.edit_requested.connect(edit_callback)
+            card.remove_requested.connect(remove_callback)
+            card_layout.insertWidget(card_layout.count() - 1, card)
+
+    # -- Strengths Tab --
+    def _build_strengths_tab(self):
+        self._strengths_card_layout, self._strength_input, self._strength_priority = \
+            self._build_card_tab(
+                "Strengths", "Add a strength...", "New strength",
+                "Add strength", self._add_strength,
+            )
 
     def _add_strength(self):
         text = self._strength_input.text().strip()
         if not text or not self._profile:
             return
+        priority = self._strength_priority.currentData()
         items = self._profile.strengths
-        items.append(text)
+        items.append({"text": text, "priority": priority})
         self._save_json_field("strengths", items)
         self._strength_input.clear()
         self._refresh_strengths()
 
-    def _remove_strength(self):
-        row = self._strengths_list.currentRow()
-        if row < 0 or not self._profile:
+    def _edit_strength(self, index):
+        if not self._profile:
+            return
+        items = self._profile.strengths_items
+        if index >= len(items):
+            return
+        current = items[index]
+        dlg = EditItemDialog(current["text"], current["priority"], self)
+        if dlg.exec() == EditItemDialog.DialogCode.Accepted:
+            result = dlg.get_result()
+            if result:
+                raw = self._profile.strengths
+                raw[index] = {"text": result[0], "priority": result[1]}
+                self._save_json_field("strengths", raw)
+                self._refresh_strengths()
+
+    def _remove_strength(self, index):
+        if not self._profile:
             return
         items = self._profile.strengths
-        if row < len(items):
-            items.pop(row)
+        if index < len(items):
+            items.pop(index)
             self._save_json_field("strengths", items)
             self._refresh_strengths()
 
     def _refresh_strengths(self):
-        self._strengths_list.clear()
         if self._profile:
-            for s in self._profile.strengths:
-                self._strengths_list.addItem(QListWidgetItem(s))
+            self._populate_cards(
+                self._strengths_card_layout,
+                self._profile.strengths_items,
+                self._edit_strength,
+                self._remove_strength,
+            )
 
-    # -- Supports Tab --
+    # -- Supports Tab (unchanged — uses SupportCard) --
     def _build_supports_tab(self):
         c = get_colors()
         w = QWidget()
@@ -291,204 +362,162 @@ class StudentProfilePage(QWidget):
 
     # -- History Tab --
     def _build_history_tab(self):
-        c = get_colors()
-        w = QWidget()
-        layout = QVBoxLayout(w)
-        layout.setSpacing(8)
-
-        self._history_list = QListWidget()
-        self._history_list.setAccessibleName("History list")
-        layout.addWidget(self._history_list, stretch=1)
-
-        add_row = QHBoxLayout()
-        self._history_input = QLineEdit()
-        self._history_input.setPlaceholderText("Add a history entry...")
-        self._history_input.setAccessibleName("New history entry")
-        self._history_input.setFixedHeight(40)
-        add_row.addWidget(self._history_input, stretch=1)
-
-        add_btn = QPushButton("Add")
-        add_btn.setAccessibleName("Add history entry")
-        add_btn.setFixedHeight(40)
-        add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        add_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: {c['primary']}; color: white;
-                border: none; border-radius: 8px; padding: 0 16px;
-            }}
-        """)
-        add_btn.clicked.connect(self._add_history)
-        add_row.addWidget(add_btn)
-
-        rm_btn = QPushButton("Remove Selected")
-        rm_btn.setAccessibleName("Remove selected history entry")
-        rm_btn.setFixedHeight(40)
-        rm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        rm_btn.clicked.connect(self._remove_history)
-        add_row.addWidget(rm_btn)
-
-        layout.addLayout(add_row)
-        self._tabs.addTab(w, "History")
+        self._history_card_layout, self._history_input, self._history_priority = \
+            self._build_card_tab(
+                "History", "Add a history entry...", "New history entry",
+                "Add history entry", self._add_history,
+            )
 
     def _add_history(self):
         text = self._history_input.text().strip()
         if not text or not self._profile:
             return
+        priority = self._history_priority.currentData()
         items = self._profile.history
-        items.append(text)
+        items.append({"text": text, "priority": priority})
         self._save_json_field("history", items)
         self._history_input.clear()
         self._refresh_history()
 
-    def _remove_history(self):
-        row = self._history_list.currentRow()
-        if row < 0 or not self._profile:
+    def _edit_history(self, index):
+        if not self._profile:
+            return
+        items = self._profile.history_items
+        if index >= len(items):
+            return
+        current = items[index]
+        dlg = EditItemDialog(current["text"], current["priority"], self)
+        if dlg.exec() == EditItemDialog.DialogCode.Accepted:
+            result = dlg.get_result()
+            if result:
+                raw = self._profile.history
+                raw[index] = {"text": result[0], "priority": result[1]}
+                self._save_json_field("history", raw)
+                self._refresh_history()
+
+    def _remove_history(self, index):
+        if not self._profile:
             return
         items = self._profile.history
-        if row < len(items):
-            items.pop(row)
+        if index < len(items):
+            items.pop(index)
             self._save_json_field("history", items)
             self._refresh_history()
 
     def _refresh_history(self):
-        self._history_list.clear()
         if self._profile:
-            for h in self._profile.history:
-                self._history_list.addItem(QListWidgetItem(h))
+            self._populate_cards(
+                self._history_card_layout,
+                self._profile.history_items,
+                self._edit_history,
+                self._remove_history,
+            )
 
     # -- Goals Tab --
     def _build_goals_tab(self):
-        c = get_colors()
-        w = QWidget()
-        layout = QVBoxLayout(w)
-        layout.setSpacing(8)
-
-        self._goals_list = QListWidget()
-        self._goals_list.setAccessibleName("Goals list")
-        layout.addWidget(self._goals_list, stretch=1)
-
-        add_row = QHBoxLayout()
-        self._goal_input = QLineEdit()
-        self._goal_input.setPlaceholderText("Add a goal or hope...")
-        self._goal_input.setAccessibleName("New goal")
-        self._goal_input.setFixedHeight(40)
-        add_row.addWidget(self._goal_input, stretch=1)
-
-        add_btn = QPushButton("Add")
-        add_btn.setAccessibleName("Add goal")
-        add_btn.setFixedHeight(40)
-        add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        add_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: {c['primary']}; color: white;
-                border: none; border-radius: 8px; padding: 0 16px;
-            }}
-        """)
-        add_btn.clicked.connect(self._add_goal)
-        add_row.addWidget(add_btn)
-
-        rm_btn = QPushButton("Remove Selected")
-        rm_btn.setAccessibleName("Remove selected goal")
-        rm_btn.setFixedHeight(40)
-        rm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        rm_btn.clicked.connect(self._remove_goal)
-        add_row.addWidget(rm_btn)
-
-        layout.addLayout(add_row)
-        self._tabs.addTab(w, "Goals")
+        self._goals_card_layout, self._goal_input, self._goal_priority = \
+            self._build_card_tab(
+                "Goals", "Add a goal or hope...", "New goal",
+                "Add goal", self._add_goal,
+            )
 
     def _add_goal(self):
         text = self._goal_input.text().strip()
         if not text or not self._profile:
             return
+        priority = self._goal_priority.currentData()
         items = self._profile.hopes
-        items.append(text)
+        items.append({"text": text, "priority": priority})
         self._save_json_field("hopes", items)
         self._goal_input.clear()
         self._refresh_goals()
 
-    def _remove_goal(self):
-        row = self._goals_list.currentRow()
-        if row < 0 or not self._profile:
+    def _edit_goal(self, index):
+        if not self._profile:
+            return
+        items = self._profile.hopes_items
+        if index >= len(items):
+            return
+        current = items[index]
+        dlg = EditItemDialog(current["text"], current["priority"], self)
+        if dlg.exec() == EditItemDialog.DialogCode.Accepted:
+            result = dlg.get_result()
+            if result:
+                raw = self._profile.hopes
+                raw[index] = {"text": result[0], "priority": result[1]}
+                self._save_json_field("hopes", raw)
+                self._refresh_goals()
+
+    def _remove_goal(self, index):
+        if not self._profile:
             return
         items = self._profile.hopes
-        if row < len(items):
-            items.pop(row)
+        if index < len(items):
+            items.pop(index)
             self._save_json_field("hopes", items)
             self._refresh_goals()
 
     def _refresh_goals(self):
-        self._goals_list.clear()
         if self._profile:
-            for g in self._profile.hopes:
-                self._goals_list.addItem(QListWidgetItem(g))
+            self._populate_cards(
+                self._goals_card_layout,
+                self._profile.hopes_items,
+                self._edit_goal,
+                self._remove_goal,
+            )
 
     # -- Stakeholders Tab --
     def _build_stakeholders_tab(self):
-        c = get_colors()
-        w = QWidget()
-        layout = QVBoxLayout(w)
-        layout.setSpacing(8)
-
-        self._stakeholders_list = QListWidget()
-        self._stakeholders_list.setAccessibleName("Stakeholders list")
-        layout.addWidget(self._stakeholders_list, stretch=1)
-
-        add_row = QHBoxLayout()
-        self._stakeholder_input = QLineEdit()
-        self._stakeholder_input.setPlaceholderText("Add a stakeholder (name - role)...")
-        self._stakeholder_input.setAccessibleName("New stakeholder")
-        self._stakeholder_input.setFixedHeight(40)
-        add_row.addWidget(self._stakeholder_input, stretch=1)
-
-        add_btn = QPushButton("Add")
-        add_btn.setAccessibleName("Add stakeholder")
-        add_btn.setFixedHeight(40)
-        add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        add_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: {c['primary']}; color: white;
-                border: none; border-radius: 8px; padding: 0 16px;
-            }}
-        """)
-        add_btn.clicked.connect(self._add_stakeholder)
-        add_row.addWidget(add_btn)
-
-        rm_btn = QPushButton("Remove Selected")
-        rm_btn.setAccessibleName("Remove selected stakeholder")
-        rm_btn.setFixedHeight(40)
-        rm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        rm_btn.clicked.connect(self._remove_stakeholder)
-        add_row.addWidget(rm_btn)
-
-        layout.addLayout(add_row)
-        self._tabs.addTab(w, "Stakeholders")
+        self._stakeholders_card_layout, self._stakeholder_input, self._stakeholder_priority = \
+            self._build_card_tab(
+                "Stakeholders", "Add a stakeholder (name - role)...",
+                "New stakeholder", "Add stakeholder", self._add_stakeholder,
+            )
 
     def _add_stakeholder(self):
         text = self._stakeholder_input.text().strip()
         if not text or not self._profile:
             return
+        priority = self._stakeholder_priority.currentData()
         items = self._profile.stakeholders
-        items.append(text)
+        items.append({"text": text, "priority": priority})
         self._save_json_field("stakeholders", items)
         self._stakeholder_input.clear()
         self._refresh_stakeholders()
 
-    def _remove_stakeholder(self):
-        row = self._stakeholders_list.currentRow()
-        if row < 0 or not self._profile:
+    def _edit_stakeholder(self, index):
+        if not self._profile:
+            return
+        items = self._profile.stakeholders_items
+        if index >= len(items):
+            return
+        current = items[index]
+        dlg = EditItemDialog(current["text"], current["priority"], self)
+        if dlg.exec() == EditItemDialog.DialogCode.Accepted:
+            result = dlg.get_result()
+            if result:
+                raw = self._profile.stakeholders
+                raw[index] = {"text": result[0], "priority": result[1]}
+                self._save_json_field("stakeholders", raw)
+                self._refresh_stakeholders()
+
+    def _remove_stakeholder(self, index):
+        if not self._profile:
             return
         items = self._profile.stakeholders
-        if row < len(items):
-            items.pop(row)
+        if index < len(items):
+            items.pop(index)
             self._save_json_field("stakeholders", items)
             self._refresh_stakeholders()
 
     def _refresh_stakeholders(self):
-        self._stakeholders_list.clear()
         if self._profile:
-            for s in self._profile.stakeholders:
-                self._stakeholders_list.addItem(QListWidgetItem(s))
+            self._populate_cards(
+                self._stakeholders_card_layout,
+                self._profile.stakeholders_items,
+                self._edit_stakeholder,
+                self._remove_stakeholder,
+            )
 
     # -- Shared helpers --
 

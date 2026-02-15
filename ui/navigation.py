@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         self.student_dashboard.logout_requested.connect(self._on_logout)
         self.stack.addWidget(self.student_dashboard)  # index 1
 
-        self.teacher_dashboard = TeacherDashboard(self.db_manager, self.auth_manager)
+        self.teacher_dashboard = TeacherDashboard(self.db_manager, self.auth_manager, self.backend_manager)
         self.teacher_dashboard.logout_requested.connect(self._on_logout)
         self.stack.addWidget(self.teacher_dashboard)  # index 2
 

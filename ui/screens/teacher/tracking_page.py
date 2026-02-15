@@ -56,7 +56,7 @@ class TeacherTrackingPage(QWidget):
         layout.addWidget(sep)
 
         gap_placeholder = EmptyState(
-            icon_text="\U0001F50D",
+            icon_text="\u25CB",
             message="Gap analysis and timeline view coming soon.",
         )
         layout.addWidget(gap_placeholder)
@@ -97,7 +97,7 @@ class TeacherTrackingPage(QWidget):
                 profile = session.query(StudentProfile).get(log.profile_id) if log.profile_id else None
                 profile_name = profile.name if profile else "Unknown"
                 support = session.query(SupportEntry).get(log.support_id) if log.support_id else None
-                sup_text = f"{support.category.title()}: {support.description[:30]}" if support else "General"
+                sup_text = f"{support.category.title()} - {(support.subcategory or 'General').title()}" if support else "General"
 
                 hdr = QLabel(f"{profile_name} — {sup_text}")
                 hdr.setStyleSheet(f"font-size: 13px; font-weight: bold; color: {c['text']};")

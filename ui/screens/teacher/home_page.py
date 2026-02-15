@@ -22,10 +22,11 @@ class TeacherHomePage(QWidget):
 
     navigate_to = pyqtSignal(str)
 
-    def __init__(self, db_manager, auth_manager, parent=None):
+    def __init__(self, db_manager, auth_manager, backend_manager=None, parent=None):
         super().__init__(parent)
         self.db = db_manager
         self.auth = auth_manager
+        self.backend_manager = backend_manager
         self._build_ui()
 
     def _build_ui(self):
@@ -47,9 +48,9 @@ class TeacherHomePage(QWidget):
         stats_row = QHBoxLayout()
         stats_row.setSpacing(12)
 
-        self._stat_students = StatCard("\U0001F393", "0", "Imported Twins")
-        self._stat_docs = StatCard("\U0001F4C4", "0", "Docs Evaluated")
-        self._stat_logs = StatCard("\U0001F4DD", "0", "Supports Logged")
+        self._stat_students = StatCard("\u25C7", "0", "Imported Twins")
+        self._stat_docs = StatCard("\u25A1", "0", "Docs Evaluated")
+        self._stat_logs = StatCard("\u270E", "0", "Supports Logged")
 
         stats_row.addWidget(self._stat_students)
         stats_row.addWidget(self._stat_docs)
@@ -74,7 +75,7 @@ class TeacherHomePage(QWidget):
 
         # Empty state
         self._empty = EmptyState(
-            icon_text="\U0001F465",
+            icon_text="\u25C7",
             message="No students yet. Import a student twin to get started.",
             action_label="Import Student",
         )
@@ -106,6 +107,23 @@ class TeacherHomePage(QWidget):
             """)
             btn.clicked.connect(lambda checked, k=key: self.navigate_to.emit(k))
             actions_row.addWidget(btn)
+
+        # Configure AI quick action
+        ai_btn = QPushButton("Configure AI")
+        ai_btn.setAccessibleName("Configure AI backend")
+        ai_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        ai_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        ai_btn.setFixedHeight(40)
+        ai_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {c['dark_input']}; color: {c['text']};
+                border: 1px solid {c['dark_border']}; border-radius: 8px;
+                padding: 6px 16px; font-size: 13px;
+            }}
+            QPushButton:hover {{ background: {c['dark_hover']}; }}
+        """)
+        ai_btn.clicked.connect(self._open_ai_setup)
+        actions_row.addWidget(ai_btn)
 
         actions_row.addStretch()
         self._layout.addLayout(actions_row)
@@ -204,3 +222,10 @@ class TeacherHomePage(QWidget):
         card.setFixedHeight(80)
         card.setAccessibleName(f"Student: {profile.name}")
         return card
+
+    def _open_ai_setup(self):
+        if self.backend_manager is None:
+            return
+        from ui.screens.setup_wizard import SetupWizard
+        dlg = SetupWizard(self.backend_manager, self)
+        dlg.exec()

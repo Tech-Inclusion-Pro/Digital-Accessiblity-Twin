@@ -416,6 +416,52 @@ class LoginScreen(QWidget):
         self.privacy_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         clayout.addWidget(self.privacy_label)
 
+        # ── Example / Demo buttons ──
+        clayout.addSpacing(8)
+        example_divider_row = QHBoxLayout()
+        example_divider_row.setContentsMargins(0, 0, 0, 0)
+        div_left = QFrame()
+        div_left.setFrameShape(QFrame.Shape.HLine)
+        div_left.setFixedHeight(1)
+        example_divider_row.addWidget(div_left, stretch=1)
+        self.example_divider_label = QLabel("  or explore an example  ")
+        self.example_divider_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        example_divider_row.addWidget(self.example_divider_label)
+        div_right = QFrame()
+        div_right.setFrameShape(QFrame.Shape.HLine)
+        div_right.setFixedHeight(1)
+        example_divider_row.addWidget(div_right, stretch=1)
+        clayout.addLayout(example_divider_row)
+        # Store divider lines for re-styling
+        self._example_div_left = div_left
+        self._example_div_right = div_right
+        clayout.addSpacing(8)
+
+        example_row = QHBoxLayout()
+        example_row.setSpacing(12)
+
+        self.student_example_btn = QPushButton("See Student Example")
+        self.student_example_btn.setAccessibleName(
+            "View a student example without logging in"
+        )
+        self.student_example_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.student_example_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.student_example_btn.setMinimumHeight(44)
+        self.student_example_btn.clicked.connect(lambda: self._on_example_login("student"))
+        example_row.addWidget(self.student_example_btn)
+
+        self.teacher_example_btn = QPushButton("See Teacher Example")
+        self.teacher_example_btn.setAccessibleName(
+            "View a teacher example without logging in"
+        )
+        self.teacher_example_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.teacher_example_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.teacher_example_btn.setMinimumHeight(44)
+        self.teacher_example_btn.clicked.connect(lambda: self._on_example_login("teacher"))
+        example_row.addWidget(self.teacher_example_btn)
+
+        clayout.addLayout(example_row)
+
         center.addWidget(self.container)
         center.addStretch()
         scroll_layout.addLayout(center)
@@ -467,6 +513,44 @@ class LoginScreen(QWidget):
         self.privacy_label.setStyleSheet(
             f"color: {c['text_muted']}; font-size: 11pt;"
         )
+
+        # Example section
+        self.example_divider_label.setStyleSheet(
+            f"color: {c['text_muted']}; font-size: 10pt;"
+        )
+        for div in (self._example_div_left, self._example_div_right):
+            div.setStyleSheet(f"background-color: {c.get('dark_border', 'rgba(255,255,255,0.1)')};")
+
+        self.student_example_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: transparent;
+                color: {accents['student']};
+                border: 2px solid {accents['student']};
+                border-radius: 12px;
+                padding: 6px 16px; font-size: 12pt; font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: {accents['student']}; color: white;
+            }}
+            QPushButton:focus {{
+                outline: 3px solid {accents['student']}; outline-offset: 2px;
+            }}
+        """)
+        self.teacher_example_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: transparent;
+                color: {accents['teacher']};
+                border: 2px solid {accents['teacher']};
+                border-radius: 12px;
+                padding: 6px 16px; font-size: 12pt; font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: {accents['teacher']}; color: white;
+            }}
+            QPushButton:focus {{
+                outline: 3px solid {accents['teacher']}; outline-offset: 2px;
+            }}
+        """)
 
         # Re-style all tracked input widgets
         for entry in self._styled_widgets:
@@ -990,8 +1074,32 @@ class LoginScreen(QWidget):
         dlg = PasswordRecoveryDialog(self.auth, self)
         dlg.exec()
 
+    def _on_example_login(self, role: str):
+        """Log in with a demo account so users can explore the app without registering."""
+        demo_accounts = {
+            "student": "maya",
+            "teacher": "rtorres",
+        }
+        username = demo_accounts.get(role)
+        if not username:
+            return
+
+        ok, msg = self.auth.login(username, "Demo1234", expected_role=role)
+        if ok:
+            self.login_successful.emit()
+        else:
+            QMessageBox.information(
+                self,
+                "Example Not Available",
+                "Demo data has not been set up yet.\n\n"
+                "To create example data, run this command in a terminal:\n\n"
+                "  cd /Users/roccocatrone/accesstwin\n"
+                "  python3 seed_demo_data.py\n\n"
+                "Then try again.",
+            )
+
     @staticmethod
     def _show_error(label: QLabel, msg: str):
-        label.setText(f"\u26A0 {msg}")
+        label.setText(f"\u25B3 {msg}")
         label.show()
         label.setAccessibleDescription(f"Error: {msg}")

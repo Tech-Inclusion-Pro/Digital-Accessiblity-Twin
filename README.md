@@ -23,6 +23,7 @@
 
 - [Overview](#overview)
 - [Features](#features)
+- [Privacy & Data Sovereignty](#privacy--data-sovereignty)
 - [Screenshots](#screenshots)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -85,6 +86,32 @@ AccessTwin supports multiple AI providers for analyzing learning materials again
   - `consent_records` — data consent tracking
 - **AES-256 field-level encryption** (Fernet) for sensitive data, with PBKDF2 key derivation from machine identity
 
+### Card-Based Student Profiles with Priority Levels
+Student profile items (Strengths, History, Goals, Stakeholders) are displayed as rich cards rather than plain text:
+
+- **Priority badges** — each item carries a priority level rendered as a colored pill:
+  - **Non-Negotiable** (red) — core identity items and critical accommodations
+  - **High** (orange) — important preferences and key relationships
+  - **Medium** (blue) — general items
+  - **Low** (gray) — nice-to-haves and minor details
+- **Inline editing** — Edit button opens a dialog to change text and priority; Remove button deletes with one click
+- **Scrollable card layout** — consistent dark-card styling matching the Supports tab aesthetic
+- **Backward compatible** — old plain-string data is auto-normalized to `{"text": ..., "priority": "medium"}` on read, so existing profiles continue to work without migration
+
+### Privacy-Preserving AI Coach
+Teachers can consult an AI Digital Accessibility Coach that reads the full student profile confidentially:
+
+- **Two-tier data model** — the Privacy Aggregator produces (a) teacher-safe aggregated themes and (b) a confidential AI-only context block
+- **Teachers never see raw student data** — only broad theme summaries (e.g., "Strong auditory processing" instead of specific medical details)
+- **AI reads everything privately** — the coach receives full student context to give informed guidance, but its responses are phrased in general, non-identifying terms
+- **Theme mapping** — 20+ keyword patterns for strengths and 10+ for goals map specific text to broad educational themes
+
+### Outline Icon System
+All UI icons use simple geometric outline characters (Unicode line-drawing symbols) instead of colored emoji:
+- Renders consistently across all platforms and font configurations
+- White-line-only aesthetic that respects the dark theme
+- Accessible to screen readers via semantic accessible names on all interactive elements
+
 ### Support Categorization
 Student supports are organized across seven categories aligned with educational frameworks:
 
@@ -126,6 +153,61 @@ Built-in JSON reference data for:
 - **POUR Principles** — with descriptions and guidelines
 - **Support Templates** — pre-built support entries by category
 - **Color Palettes** — Wong 2011 color-blind safe palette
+
+---
+
+## Privacy & Data Sovereignty
+
+AccessTwin handles some of the most sensitive data in education — student disability diagnoses, medical histories, accommodation needs, and family relationships. Protecting this data is not just a technical requirement but an ethical imperative. Students with disabilities are disproportionately affected by data breaches because their information can be used to discriminate in employment, housing, insurance, and education.
+
+### Why Privacy Matters Here
+
+| Risk | Why It Matters |
+|------|----------------|
+| **Re-identification** | Detailed accommodation descriptions (e.g., "bilateral cochlear implants at age 2") uniquely identify students even without names |
+| **Discrimination** | Disability data disclosed to unauthorized parties can lead to bias in college admissions, hiring, and insurance |
+| **Power imbalance** | Students are minors who cannot fully consent to how their data is used; the system must protect them by default |
+| **Teacher over-access** | Teachers need enough information to provide accommodations but should not see raw medical or family details |
+| **Cloud AI leakage** | Sending student profiles to cloud AI providers creates permanent copies outside institutional control |
+
+### How AccessTwin Protects Student Data
+
+**1. Local-First Architecture**
+- All data is stored in a local SQLite database on the user's machine — never on a remote server
+- AES-256 field-level encryption (Fernet) protects sensitive fields at rest
+- No telemetry, no analytics, no phone-home behavior
+
+**2. Privacy-Preserving AI (Two-Tier Aggregation)**
+- The **Privacy Aggregator** converts raw student data into two tiers before any teacher interaction:
+  - **Teacher-safe tier** — only broad themes (e.g., "Strong auditory processing", "Post-secondary education goals"), category counts, and framework coverage percentages
+  - **AI-only tier** — full confidential student context, sent only to the AI coach and never displayed to the teacher
+- Teachers see theme summaries, never raw profile text
+- The AI coach reads full context privately to give informed, specific guidance — but its responses use general educational language
+
+**3. Dual Cloud Consent**
+- Local AI providers (Ollama, LM Studio, GPT4All) are the default — no data leaves the machine
+- Cloud AI (OpenAI, Anthropic) requires two explicit consent checkboxes:
+  - Institutional approval confirmation
+  - Data transmission acknowledgment
+- Both must be checked before cloud configuration can be saved
+
+**4. Priority-Based Consent Awareness**
+- Students mark each profile item with a priority level (Low / Medium / High / Non-Negotiable)
+- Non-Negotiable items represent core identity and critical accommodations that the student considers essential
+- This metadata helps educators understand which accommodations are absolute requirements vs. preferences
+
+**5. Audit Trail**
+- Every login, logout, registration, and password reset is recorded in `audit_logs`
+- Consent decisions are tracked in `consent_records`
+- No data is deleted without explicit user action
+
+### Compliance Alignment
+
+AccessTwin's privacy architecture aligns with:
+- **FERPA** (Family Educational Rights and Privacy Act) — student data stays local, teacher access is limited to aggregated themes
+- **IDEA** (Individuals with Disabilities Education Act) — supports IEP/504 documentation while protecting confidentiality
+- **COPPA** (Children's Online Privacy Protection Act) — no data is transmitted to third parties by default
+- **GDPR Article 9** (Special Category Data) — disability data receives the highest level of protection through encryption and access controls
 
 ---
 
@@ -249,14 +331,17 @@ accesstwin/
 │   ├── evaluation.py                # TwinEvaluation model
 │   ├── tracking.py                  # TrackingLog model
 │   └── audit.py                     # AuditLog + ConsentRecord models
+├── seed_demo_data.py                    # Demo data seeder (5 students, 2 teachers)
 ├── ai/
 │   ├── backend_manager.py           # Unified AI facade
+│   ├── privacy_aggregator.py        # Two-tier privacy aggregation engine
 │   ├── ollama_client.py             # Ollama local client
 │   ├── lmstudio_client.py           # LM Studio client (OpenAI-compatible)
 │   ├── gpt4all_client.py            # GPT4All direct Python client
 │   ├── cloud_client.py              # OpenAI + Anthropic cloud client
 │   └── prompts/
-│       └── __init__.py              # System prompt stubs (Phase 2)
+│       ├── __init__.py              # System prompt stubs
+│       └── coach_prompt.py          # AI coach system prompt builder
 ├── ui/
 │   ├── accessibility.py             # AccessibilityManager singleton
 │   ├── accessibility_prefs.py       # Device-level prefs persistence
@@ -269,14 +354,34 @@ accesstwin/
 │   ├── navigation.py                # MainWindow, screen routing
 │   ├── screens/
 │   │   ├── login_screen.py          # Three-tab login (Student/Teacher/Register)
-│   │   └── setup_wizard.py          # AI backend configuration wizard
+│   │   ├── setup_wizard.py          # AI backend configuration wizard
+│   │   ├── student/
+│   │   │   ├── dashboard.py         # Student sidebar + stacked pages
+│   │   │   ├── home_page.py         # Student home with stats and supports grid
+│   │   │   ├── profile_page.py      # 5-tab profile editor (card-based)
+│   │   │   ├── log_experience_page.py  # Student experience logging
+│   │   │   ├── tracking_page.py     # Student tracking timeline
+│   │   │   └── export_page.py       # Digital Twin export
+│   │   └── teacher/
+│   │       ├── dashboard.py         # Teacher sidebar + stacked pages
+│   │       ├── home_page.py         # Teacher home with stats and student grid
+│   │       ├── students_page.py     # Student twin import and browsing
+│   │       ├── evaluate_page.py     # Document upload and AI evaluation
+│   │       ├── log_impl_page.py     # Teacher implementation logging
+│   │       ├── tracking_page.py     # Teacher tracking and gap analysis
+│   │       └── coach_dialog.py      # AI Digital Accessibility Coach dialog
 │   └── components/
 │       ├── accessibility_panel.py   # Full accessibility preferences dialog
 │       ├── accessibility_toolbar.py # Quick-access font/contrast/color bar
 │       ├── breadcrumb.py            # Navigation breadcrumb trail
+│       ├── edit_item_dialog.py      # Edit item text and priority dialog
 │       ├── empty_state.py           # Empty state placeholder
 │       ├── help_button.py           # Contextual help button
-│       └── shortcuts_dialog.py      # Keyboard shortcuts reference (Ctrl+/)
+│       ├── profile_item_card.py     # Card widget for profile items with priority
+│       ├── rating_widget.py         # Star rating input widget
+│       ├── shortcuts_dialog.py      # Keyboard shortcuts reference (Ctrl+/)
+│       ├── stat_card.py             # Dashboard metric card
+│       └── support_card.py          # Support entry card with UDL/POUR tags
 ├── utils/
 │   ├── encryption.py                # AES-256 Fernet encryption manager
 │   └── validators.py                # Input validation (username, password, email)
@@ -387,7 +492,7 @@ python -m pytest tests/ -v
 
 ## Roadmap
 
-### Phase 1 (Current) — Foundation
+### Phase 1 — Foundation
 - [x] Project scaffolding and configuration
 - [x] Encrypted SQLite database with 8 tables
 - [x] Role-based authentication (student/teacher)
@@ -397,20 +502,26 @@ python -m pytest tests/ -v
 - [x] WCAG 2.1 AA compliance
 - [x] 37 passing tests
 
-### Phase 2 — Student Profiles & Twin Creation
-- [ ] Student profile builder (strengths, supports, history, hopes)
-- [ ] Support entry wizard with UDL/POUR mapping
-- [ ] Digital Twin generation and visualization
-- [ ] Student dashboard with profile management
+### Phase 2 (Current) — Student Profiles & Twin Creation
+- [x] Student profile builder (strengths, supports, history, hopes, stakeholders)
+- [x] Card-based profile items with priority levels (Low / Medium / High / Non-Negotiable)
+- [x] Support entry wizard with UDL/POUR mapping
+- [x] Digital Twin export (JSON format)
+- [x] Student dashboard with profile management, stats, and supports grid
+- [x] Inline edit and remove on all profile items
+- [x] Demo data seeder with 5 student personas and 2 teacher accounts
+- [x] Outline icon system (all icons replaced with geometric line-drawing characters)
 - [ ] Bundled fonts (OpenDyslexic)
 - [ ] Tutorial system
 
-### Phase 3 — Teacher Tools & AI Analysis
-- [ ] Document upload and management
+### Phase 3 (Current) — Teacher Tools & AI Analysis
+- [x] Document upload and management
+- [x] Teacher dashboard with student twin browsing and import
+- [x] Implementation tracking and outcome logging
+- [x] Privacy-preserving AI Coach with two-tier data aggregation
+- [x] Privacy Aggregator — teacher-safe themes vs. confidential AI-only context
 - [ ] AI-powered material evaluation against student profiles
 - [ ] Suggestion engine with confidence scores
-- [ ] Teacher dashboard with student twin browsing
-- [ ] Implementation tracking and outcome logging
 
 ### Phase 4 — Collaboration & Reporting
 - [ ] Student-teacher profile sharing
@@ -422,6 +533,43 @@ python -m pytest tests/ -v
 ---
 
 ## Changelog
+
+### v2.0.0 — Card-Based Profiles, Privacy Aggregation & Outline Icons (2026-02-14)
+
+**Added**
+- **Card-based profile items** — Strengths, History, Goals, and Stakeholders tabs now display items as rich cards with priority badges, inline Edit, and Remove actions (`ui/components/profile_item_card.py`, `ui/components/edit_item_dialog.py`)
+- **Priority levels** — every profile item carries a priority (Low / Medium / High / Non-Negotiable) rendered as colored badge pills; students can express which accommodations are absolute requirements vs. preferences
+- **Privacy Aggregator** (`ai/privacy_aggregator.py`) — two-tier engine that converts raw student data into (a) teacher-safe aggregated themes and (b) a confidential AI-only context block; 20+ strength keyword patterns and 10+ goal patterns map specific text to broad educational themes
+- **AI Digital Accessibility Coach** (`ui/screens/teacher/coach_dialog.py`) — teachers consult an AI coach that reads full student context privately but responds with general, non-identifying guidance
+- **Coach prompt builder** (`ai/prompts/coach_prompt.py`) — constructs the system prompt with teacher-safe summaries and confidential context for the AI
+- **Demo data seeder** (`seed_demo_data.py`) — creates 5 fully populated student personas (Maya, Jordan, Aisha, Liam, Sophie) with diverse disabilities, 2 teacher accounts, 6-7 support entries each, tracking logs from both student and teacher perspectives, and mock AI evaluations
+- **Student dashboard** — sidebar navigation, home page with stat cards (active supports, UDL coverage, effectiveness), supports grid, and quick action buttons
+- **Teacher dashboard** — sidebar navigation, home page with imported twins, docs evaluated, and supports logged stats, student card grid, and AI configuration access
+- **Student experience logging** — students rate and journal about their support experiences
+- **Teacher implementation logging** — teachers document how they implement accommodations and track outcomes
+- **Student tracking page** — timeline view placeholder for progress visualization
+- **Teacher tracking page** — gap analysis placeholder for identifying accommodation gaps
+- **Twin export page** — students export their Digital Twin as a portable JSON file
+- **Teacher students page** — import student twins, browse imported profiles, consult AI coach per student
+- **Teacher evaluate page** — upload documents for accessibility evaluation
+- **Rating widget** (`ui/components/rating_widget.py`) — clickable star rating input for effectiveness scoring
+- **Stat card** (`ui/components/stat_card.py`) — compact metric card for dashboard statistics
+- **Backward-compatible data format** — old plain-string profile items are auto-normalized to `{"text": ..., "priority": "medium"}` on read via `_normalize_item()` helper and `*_items` properties on `StudentProfile`
+
+**Changed**
+- **All icons replaced with outline characters** — every emoji/picture icon across 13 UI files replaced with simple geometric Unicode outlines (house, circle, pencil, triangle, diamond, etc.) for consistent white-line rendering on dark theme
+- **Profile page rewritten** — `QListWidget` tabs replaced with `QScrollArea` + `ProfileItemCard` card layouts; add-item forms now include a priority `QComboBox`
+- **Privacy Aggregator handles mixed formats** — `_extract_text()` helper safely extracts text from items that may be dicts or plain strings, ensuring backward compatibility in theme generation and AI context building
+- **Seed data upgraded** — all 5 student personas' strengths, history, hopes, and stakeholders converted from plain strings to `{"text": ..., "priority": ...}` objects with varied, realistic priority assignments
+
+**Privacy & Security**
+- **Two-tier data separation** — teachers never see raw student disability data; only broad theme summaries are exposed
+- **Local-first AI** — all AI processing defaults to local models with no data leaving the machine
+- **Dual cloud consent** — cloud AI requires both institutional approval and data transmission acknowledgment
+- **Priority-based consent awareness** — Non-Negotiable priority flags help educators understand which accommodations are absolute requirements
+- **Audit trail** — all authentication events and consent decisions are recorded
+
+---
 
 ### v1.0.0 — Phase 1 Foundation (2025-02-13)
 

@@ -45,7 +45,7 @@ class TeacherLogImplPage(QWidget):
 
         # Empty state
         self._empty = EmptyState(
-            icon_text="\U0001F4DD",
+            icon_text="\u270E",
             message="No students available. Import student twins first.",
         )
         self._empty.setVisible(False)
@@ -141,8 +141,9 @@ class TeacherLogImplPage(QWidget):
                 SupportEntry.status == "active",
             ).all()
             for s in supports:
+                sub = s.subcategory or "General"
                 self._support_combo.addItem(
-                    f"{s.category.title()}: {s.description[:50]}", s.id
+                    f"{s.category.title()} - {sub.title()}", s.id
                 )
         finally:
             session.close()
@@ -251,7 +252,7 @@ class TeacherLogImplPage(QWidget):
             profile_name = profile.name if profile else "Unknown"
 
             support = session.query(SupportEntry).get(log.support_id) if log.support_id else None
-            sup_text = f"{support.category.title()}: {support.description[:30]}" if support else "General"
+            sup_text = f"{support.category.title()} - {(support.subcategory or 'General').title()}" if support else "General"
 
             hdr = QLabel(f"{profile_name} — {sup_text}")
             hdr.setStyleSheet(f"font-size: 13px; font-weight: bold; color: {c['text']};")

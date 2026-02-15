@@ -27,11 +27,14 @@ class LMStudioClient:
             return False, f"Connection failed: {e}"
 
     async def generate(self, user_message: str,
-                       context: dict = None) -> AsyncGenerator[str, None]:
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT_STUB},
-            {"role": "user", "content": user_message},
-        ]
+                       context: dict = None,
+                       system_prompt: str = None,
+                       conversation_history: list = None) -> AsyncGenerator[str, None]:
+        sys_msg = system_prompt or SYSTEM_PROMPT_STUB
+        messages = [{"role": "system", "content": sys_msg}]
+        if conversation_history:
+            messages.extend(conversation_history)
+        messages.append({"role": "user", "content": user_message})
         payload = {"model": self.model, "messages": messages, "stream": True}
 
         try:

@@ -8,14 +8,14 @@ from PyQt6.QtCore import Qt
 from config.settings import get_colors
 
 CATEGORY_ICONS = {
-    "technology": "\U0001F4BB",
-    "physical": "\u267F",
-    "sensory": "\U0001F441",
-    "communication": "\U0001F4AC",
-    "social": "\U0001F465",
-    "academic": "\U0001F4DA",
-    "behavioral": "\U0001F9E0",
-    "other": "\u2699",
+    "technology": "\u25A1",
+    "physical": "\u2295",
+    "sensory": "\u25CE",
+    "communication": "\u25B7",
+    "social": "\u25C7",
+    "academic": "\u2261",
+    "behavioral": "\u25CB",
+    "other": "\u2606",
 }
 
 
@@ -40,7 +40,7 @@ class SupportCard(QWidget):
         # Header row: icon + category + status badge
         header = QHBoxLayout()
         cat = self._entry.category or "other"
-        icon = CATEGORY_ICONS.get(cat.lower(), "\u2699")
+        icon = CATEGORY_ICONS.get(cat.lower(), "\u2606")
 
         cat_label = QLabel(f"{icon} {cat.title()}")
         cat_label.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {c['text']};")
@@ -84,7 +84,7 @@ class SupportCard(QWidget):
 
         # Effectiveness
         if self._entry.effectiveness_rating is not None:
-            rating = QLabel(f"\u2605 {self._entry.effectiveness_rating:.1f}")
+            rating = QLabel(f"\u2606 {self._entry.effectiveness_rating:.1f}")
             rating.setStyleSheet(f"font-size: 12px; color: {c['warning']};")
             tags_row.addWidget(rating)
 

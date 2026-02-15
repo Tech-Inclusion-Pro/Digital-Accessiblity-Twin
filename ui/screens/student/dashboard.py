@@ -14,11 +14,11 @@ from ui.screens.student.tracking_page import StudentTrackingPage
 from ui.screens.student.export_page import StudentExportPage
 
 NAV_ITEMS = [
-    {"key": "home", "icon": "\U0001F3E0", "label": "Home"},
-    {"key": "profile", "icon": "\U0001F464", "label": "My Profile"},
-    {"key": "log", "icon": "\U0001F4DD", "label": "Log Experience"},
-    {"key": "tracking", "icon": "\U0001F4CA", "label": "Tracking"},
-    {"key": "export", "icon": "\U0001F4E6", "label": "Export Twin"},
+    {"key": "home", "icon": "\u2302", "label": "Home"},
+    {"key": "profile", "icon": "\u25CB", "label": "My Profile"},
+    {"key": "log", "icon": "\u270E", "label": "Log Experience"},
+    {"key": "tracking", "icon": "\u2630", "label": "Tracking"},
+    {"key": "export", "icon": "\u25A1", "label": "Export Twin"},
 ]
 
 PAGE_MAP = {

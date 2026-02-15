@@ -46,9 +46,9 @@ class StudentHomePage(QWidget):
         self._stats_row = QHBoxLayout()
         self._stats_row.setSpacing(12)
 
-        self._stat_active = StatCard("\U0001F6E1", "0", "Active Supports")
-        self._stat_udl = StatCard("\U0001F3AF", "0%", "UDL Coverage")
-        self._stat_eff = StatCard("\u2B50", "N/A", "Avg Effectiveness")
+        self._stat_active = StatCard("\u25B3", "0", "Active Supports")
+        self._stat_udl = StatCard("\u25CE", "0%", "UDL Coverage")
+        self._stat_eff = StatCard("\u2606", "N/A", "Avg Effectiveness")
 
         self._stats_row.addWidget(self._stat_active)
         self._stats_row.addWidget(self._stat_udl)
@@ -77,7 +77,7 @@ class StudentHomePage(QWidget):
 
         # Empty state (hidden by default)
         self._empty = EmptyState(
-            icon_text="\U0001F4CB",
+            icon_text="\u2630",
             message="No profile yet. Create your accessibility profile to get started.",
             action_label="Create Profile",
         )
