@@ -1,7 +1,7 @@
 """Teacher dashboard — sidebar + stacked sub-pages."""
 
 from PyQt6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget,
+    QWidget, QHBoxLayout, QVBoxLayout, QStackedWidget, QPushButton,
 )
 from PyQt6.QtCore import pyqtSignal
 
@@ -62,7 +62,29 @@ class TeacherDashboard(QWidget):
         self._build_ui()
 
     def _build_ui(self):
-        outer = QHBoxLayout(self)
+        outer_wrapper = QVBoxLayout(self)
+        outer_wrapper.setContentsMargins(0, 0, 0, 0)
+        outer_wrapper.setSpacing(0)
+
+        # WCAG 2.4.1 — Skip to main content link
+        self._skip_btn = QPushButton("Skip to Main Content")
+        self._skip_btn.setAccessibleName("Skip to main content")
+        self._skip_btn.setStyleSheet("""
+            QPushButton {
+                position: absolute; left: -9999px; height: 1px; width: 1px;
+                overflow: hidden; background: #6f2fa6; color: white;
+                border: none; padding: 8px 16px; font-weight: bold;
+                border-radius: 0; min-height: 0; min-width: 0;
+            }
+            QPushButton:focus {
+                position: relative; left: 0; height: auto; width: auto;
+                min-height: 36px; min-width: 120px;
+            }
+        """)
+        self._skip_btn.clicked.connect(self._skip_to_content)
+        outer_wrapper.addWidget(self._skip_btn)
+
+        outer = QHBoxLayout()
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
@@ -113,6 +135,7 @@ class TeacherDashboard(QWidget):
 
         right.addWidget(self._stack, stretch=1)
         outer.addLayout(right, stretch=1)
+        outer_wrapper.addLayout(outer, stretch=1)
 
         # Default
         self._breadcrumb.set_crumbs(BREADCRUMB_MAP["home"])
@@ -128,6 +151,12 @@ class TeacherDashboard(QWidget):
     def _on_crumb(self, index: int):
         if index == 0:
             self._navigate("home")
+
+    def _skip_to_content(self):
+        """Move focus to the current page in the content stack."""
+        current = self._stack.currentWidget()
+        if current:
+            current.setFocus()
 
     def _open_settings(self):
         from ui.components.accessibility_panel import AccessibilityPanel
