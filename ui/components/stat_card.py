@@ -26,6 +26,7 @@ class StatCard(QWidget):
         icon_lbl = QLabel(self._icon)
         icon_lbl.setStyleSheet(f"font-size: 28px; color: {c['primary_text']};")
         icon_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_lbl.setAccessibleName("")  # decorative icon, skip for screen readers
         layout.addWidget(icon_lbl)
 
         val_lbl = QLabel(self._value)

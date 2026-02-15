@@ -44,6 +44,7 @@ class SupportCard(QWidget):
 
         cat_label = QLabel(f"{icon} {cat.title()}")
         cat_label.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {c['text']};")
+        cat_label.setAccessibleName(f"{cat.title()} category")
         header.addWidget(cat_label)
 
         header.addStretch()
@@ -74,10 +75,10 @@ class SupportCard(QWidget):
         pour = json.loads(self._entry.pour_mapping or "{}")
 
         for key in udl:
-            tag = self._make_tag(key, c["primary"])
+            tag = self._make_tag(f"UDL: {key}", c["primary"])
             tags_row.addWidget(tag)
         for key in pour:
-            tag = self._make_tag(key, c["secondary"])
+            tag = self._make_tag(f"POUR: {key}", c["secondary"])
             tags_row.addWidget(tag)
 
         tags_row.addStretch()
@@ -86,6 +87,7 @@ class SupportCard(QWidget):
         if self._entry.effectiveness_rating is not None:
             rating = QLabel(f"\u2606 {self._entry.effectiveness_rating:.1f}")
             rating.setStyleSheet(f"font-size: 12px; color: {c['warning']};")
+            rating.setAccessibleName(f"Effectiveness rating: {self._entry.effectiveness_rating:.1f} out of 5")
             tags_row.addWidget(rating)
 
         layout.addLayout(tags_row)

@@ -23,6 +23,7 @@ class EmptyState(QWidget):
             icon = QLabel(icon_text)
             icon.setStyleSheet(f"font-size: 48px; color: {c['text_muted']};")
             icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            icon.setAccessibleName("")  # decorative icon
             layout.addWidget(icon)
 
         msg = QLabel(message)
