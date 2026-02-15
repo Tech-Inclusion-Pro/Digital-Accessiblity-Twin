@@ -7,7 +7,11 @@ from config.brand import ROLE_ACCENTS, SPACING
 def get_main_stylesheet(colors: dict = None, fonts: dict = None,
                         enhanced_focus: bool = False,
                         dyslexia_font: bool = False,
-                        custom_cursor: str = "default") -> str:
+                        custom_cursor: str = "default",
+                        reduced_motion: bool = False,
+                        letter_spacing: int = 0,
+                        word_spacing: int = 0,
+                        line_height: int = 0) -> str:
     """Generate the full application QSS."""
     c = colors or get_colors()
     f = fonts or {"base": 16, "heading": 24, "subheading": 18}
@@ -15,12 +19,28 @@ def get_main_stylesheet(colors: dict = None, fonts: dict = None,
     focus_width = APP_SETTINGS["focus_outline_width"]
     touch = APP_SETTINGS["touch_target_min"]
 
-    focus_extra = ""
+    # WCAG 1.4.12 — text spacing overrides
+    spacing_css = ""
+    if letter_spacing > 0:
+        spacing_css += f"letter-spacing: {letter_spacing}px; "
+    if word_spacing > 0:
+        spacing_css += f"word-spacing: {word_spacing}px; "
+    if line_height > 0:
+        spacing_css += f"line-height: {100 + line_height * 10}%; "
+
+    # WCAG 2.4.7 — focus indicators always visible; enhanced mode makes them thicker
     if enhanced_focus:
         focus_extra = f"""
         *:focus {{
-            outline: {focus_width}px solid {c['primary']};
+            outline: {focus_width + 1}px solid {c['primary']};
             outline-offset: 2px;
+        }}
+        """
+    else:
+        focus_extra = f"""
+        *:focus {{
+            outline: 2px solid {c['primary']};
+            outline-offset: 1px;
         }}
         """
 
@@ -28,6 +48,7 @@ def get_main_stylesheet(colors: dict = None, fonts: dict = None,
     * {{
         font-family: {family};
         font-size: {f['base']}px;
+        {spacing_css}
     }}
 
     QMainWindow, QWidget {{
@@ -64,7 +85,7 @@ def get_main_stylesheet(colors: dict = None, fonts: dict = None,
         min-height: {touch}px;
         background-color: {c['dark_input']};
         color: {c['text']};
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.35);
         border-radius: {SPACING['input_radius']}px;
         padding: 4px 14px;
     }}
@@ -112,7 +133,7 @@ def get_main_stylesheet(colors: dict = None, fonts: dict = None,
     }}
     QCheckBox::indicator:unchecked {{
         background-color: {c['dark_input']};
-        border: 2px solid rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.35);
     }}
     QCheckBox::indicator:checked {{
         background-color: {c['primary']};
@@ -161,6 +182,13 @@ def get_main_stylesheet(colors: dict = None, fonts: dict = None,
     }}
 
     {focus_extra}
+
+    {"" if not reduced_motion else '''
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+    '''}
     """
 
 

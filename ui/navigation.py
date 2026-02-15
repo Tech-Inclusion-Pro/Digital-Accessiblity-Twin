@@ -100,6 +100,10 @@ class MainWindow(QMainWindow):
             enhanced_focus=self.a11y.enhanced_focus,
             dyslexia_font=self.a11y.dyslexia_font,
             custom_cursor=self.a11y.custom_cursor,
+            reduced_motion=self.a11y.reduced_motion,
+            letter_spacing=self.a11y.letter_spacing,
+            word_spacing=self.a11y.word_spacing,
+            line_height=self.a11y.line_height,
         )
         if self.a11y.role_accent:
             qss += get_role_stylesheet(self.a11y.role_accent)
