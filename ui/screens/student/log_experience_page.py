@@ -12,6 +12,7 @@ from models.support import SupportEntry
 from models.tracking import TrackingLog
 from ui.components.rating_widget import RatingWidget
 from ui.components.empty_state import EmptyState
+from ui.components.mic_button import MicButton
 
 
 class StudentLogExperiencePage(QWidget):
@@ -71,7 +72,10 @@ class StudentLogExperiencePage(QWidget):
         self._notes.setPlaceholderText("How is this support working for you?")
         self._notes.setAccessibleName("Experience notes")
         self._notes.setMaximumHeight(100)
-        form_layout.addWidget(self._notes)
+        notes_row = QHBoxLayout()
+        notes_row.addWidget(self._notes, stretch=1)
+        notes_row.addWidget(MicButton(target=self._notes), alignment=Qt.AlignmentFlag.AlignTop)
+        form_layout.addLayout(notes_row)
 
         # Submit
         submit_btn = QPushButton("Submit Log")

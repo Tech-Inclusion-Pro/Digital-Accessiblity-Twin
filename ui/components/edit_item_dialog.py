@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 
 from config.settings import get_colors
+from ui.components.mic_button import MicButton
 
 PRIORITY_CHOICES = [
     ("low", "Low"),
@@ -44,7 +45,10 @@ class EditItemDialog(QDialog):
         self._text_edit.setPlainText(text)
         self._text_edit.setAccessibleName("Item text")
         self._text_edit.setFixedHeight(90)
-        layout.addWidget(self._text_edit)
+        text_row = QHBoxLayout()
+        text_row.addWidget(self._text_edit, stretch=1)
+        text_row.addWidget(MicButton(target=self._text_edit), alignment=Qt.AlignmentFlag.AlignTop)
+        layout.addLayout(text_row)
 
         # Priority combo
         priority_label = QLabel("Priority:")

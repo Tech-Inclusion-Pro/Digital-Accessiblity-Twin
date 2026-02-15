@@ -17,6 +17,7 @@ from ai.backend_manager import BackendManager
 from ai.privacy_aggregator import PrivacyAggregator
 from ai.prompts.coach_prompt import build_coach_prompt
 from models.consultation_log import ConsultationLog
+from ui.components.mic_button import MicButton
 
 # Category → pill colour (muted palette that works on dark backgrounds)
 _CATEGORY_COLORS = {
@@ -233,6 +234,8 @@ class CoachDialog(QDialog):
         )
         self._input.returnPressed.connect(self._send_message)
         input_row.addWidget(self._input, stretch=1)
+
+        input_row.addWidget(MicButton(target=self._input))
 
         self._send_btn = QPushButton("Send")
         self._send_btn.setAccessibleName("Send message")

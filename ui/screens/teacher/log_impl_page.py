@@ -1,7 +1,7 @@
 """Teacher log implementation page — log support implementation for students."""
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QPushButton,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QComboBox, QTextEdit, QMessageBox, QScrollArea, QFrame,
 )
 from PyQt6.QtCore import Qt
@@ -13,6 +13,7 @@ from models.document import Document
 from models.tracking import TrackingLog
 from models.evaluation import TwinEvaluation
 from ui.components.empty_state import EmptyState
+from ui.components.mic_button import MicButton
 
 
 class TeacherLogImplPage(QWidget):
@@ -78,7 +79,10 @@ class TeacherLogImplPage(QWidget):
         self._impl_notes.setPlaceholderText("How did you implement this support?")
         self._impl_notes.setAccessibleName("Implementation notes")
         self._impl_notes.setMaximumHeight(80)
-        form_layout.addWidget(self._impl_notes)
+        impl_row = QHBoxLayout()
+        impl_row.addWidget(self._impl_notes, stretch=1)
+        impl_row.addWidget(MicButton(target=self._impl_notes), alignment=Qt.AlignmentFlag.AlignTop)
+        form_layout.addLayout(impl_row)
 
         # Outcome notes
         form_layout.addWidget(QLabel("Outcome Notes:"))
@@ -86,7 +90,10 @@ class TeacherLogImplPage(QWidget):
         self._outcome_notes.setPlaceholderText("What was the observed outcome?")
         self._outcome_notes.setAccessibleName("Outcome notes")
         self._outcome_notes.setMaximumHeight(80)
-        form_layout.addWidget(self._outcome_notes)
+        outcome_row = QHBoxLayout()
+        outcome_row.addWidget(self._outcome_notes, stretch=1)
+        outcome_row.addWidget(MicButton(target=self._outcome_notes), alignment=Qt.AlignmentFlag.AlignTop)
+        form_layout.addLayout(outcome_row)
 
         # Submit
         submit_btn = QPushButton("Submit Log")

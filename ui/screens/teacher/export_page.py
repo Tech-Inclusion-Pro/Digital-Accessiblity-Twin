@@ -20,6 +20,7 @@ from models.document import Document
 from models.evaluation import TwinEvaluation
 from models.insight_log import InsightLog
 from ui.components.empty_state import EmptyState
+from ui.components.mic_button import MicButton
 
 
 # ------------------------------------------------------------------ workers
@@ -176,7 +177,10 @@ class ReportConfigDialog(QDialog):
                 padding: 8px; font-size: 13px;
             }}
         """)
-        layout.addWidget(self._guidance)
+        guidance_row = QHBoxLayout()
+        guidance_row.addWidget(self._guidance, stretch=1)
+        guidance_row.addWidget(MicButton(target=self._guidance), alignment=Qt.AlignmentFlag.AlignTop)
+        layout.addLayout(guidance_row)
 
         # Buttons
         btn_row = QHBoxLayout()

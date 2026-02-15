@@ -16,6 +16,7 @@ from models.support import SupportEntry
 from models.tracking import TrackingLog
 from ai.prompts.student_insights_prompt import build_student_insights_prompt
 from ui.components.empty_state import EmptyState
+from ui.components.mic_button import MicButton
 from models.insight_log import InsightLog
 
 
@@ -294,6 +295,8 @@ class StudentInsightsPage(QWidget):
         )
         self._chat_input.returnPressed.connect(self._send_chat_message)
         chat_input_row.addWidget(self._chat_input, stretch=1)
+
+        chat_input_row.addWidget(MicButton(target=self._chat_input))
 
         self._chat_send_btn = QPushButton("Send")
         self._chat_send_btn.setAccessibleName("Send chat message")

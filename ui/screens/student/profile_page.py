@@ -16,6 +16,7 @@ from ui.components.support_card import SupportCard
 from ui.components.empty_state import EmptyState
 from ui.components.profile_item_card import ProfileItemCard
 from ui.components.edit_item_dialog import EditItemDialog
+from ui.components.mic_button import MicButton
 
 PRIORITY_CHOICES = [
     ("low", "Low"),
@@ -125,6 +126,7 @@ class StudentProfilePage(QWidget):
         line_edit.setAccessibleName(input_accessible)
         line_edit.setFixedHeight(40)
         add_row.addWidget(line_edit, stretch=1)
+        add_row.addWidget(MicButton(target=line_edit))
 
         priority_combo = QComboBox()
         priority_combo.setAccessibleName("Priority level")
@@ -267,19 +269,28 @@ class StudentProfilePage(QWidget):
         self._sup_desc.setPlaceholderText("Describe the support...")
         self._sup_desc.setAccessibleName("Support description")
         self._sup_desc.setFixedHeight(40)
-        form.addRow("Description:", self._sup_desc)
+        sup_desc_row = QHBoxLayout()
+        sup_desc_row.addWidget(self._sup_desc, stretch=1)
+        sup_desc_row.addWidget(MicButton(target=self._sup_desc))
+        form.addRow("Description:", sup_desc_row)
 
         self._sup_udl = QLineEdit()
         self._sup_udl.setPlaceholderText("e.g. Engagement, Representation (comma-sep)")
         self._sup_udl.setAccessibleName("UDL mapping tags")
         self._sup_udl.setFixedHeight(40)
-        form.addRow("UDL Tags:", self._sup_udl)
+        sup_udl_row = QHBoxLayout()
+        sup_udl_row.addWidget(self._sup_udl, stretch=1)
+        sup_udl_row.addWidget(MicButton(target=self._sup_udl))
+        form.addRow("UDL Tags:", sup_udl_row)
 
         self._sup_pour = QLineEdit()
         self._sup_pour.setPlaceholderText("e.g. Perceivable, Operable (comma-sep)")
         self._sup_pour.setAccessibleName("POUR mapping tags")
         self._sup_pour.setFixedHeight(40)
-        form.addRow("POUR Tags:", self._sup_pour)
+        sup_pour_row = QHBoxLayout()
+        sup_pour_row.addWidget(self._sup_pour, stretch=1)
+        sup_pour_row.addWidget(MicButton(target=self._sup_pour))
+        form.addRow("POUR Tags:", sup_pour_row)
 
         layout.addLayout(form)
 

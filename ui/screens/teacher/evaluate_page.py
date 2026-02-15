@@ -12,6 +12,7 @@ from models.student_profile import StudentProfile
 from models.document import Document
 from models.evaluation import TwinEvaluation
 from ui.components.empty_state import EmptyState
+from ui.components.mic_button import MicButton
 
 
 class TeacherEvaluatePage(QWidget):
@@ -76,7 +77,10 @@ class TeacherEvaluatePage(QWidget):
         self._purpose.setPlaceholderText("Describe the purpose of this document evaluation...")
         self._purpose.setAccessibleName("Document purpose description")
         self._purpose.setMaximumHeight(80)
-        layout.addWidget(self._purpose)
+        purpose_row = QHBoxLayout()
+        purpose_row.addWidget(self._purpose, stretch=1)
+        purpose_row.addWidget(MicButton(target=self._purpose), alignment=Qt.AlignmentFlag.AlignTop)
+        layout.addLayout(purpose_row)
 
         # Student selection
         layout.addWidget(QLabel("Select Students:"))
