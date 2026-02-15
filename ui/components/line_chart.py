@@ -22,11 +22,23 @@ class LineChart(QWidget):
         self._data: list[dict] = []
         self.setFixedHeight(self.FIXED_HEIGHT)
         self.setAccessibleName("Effectiveness trend line chart")
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
 
     def set_data(self, data: list[dict]):
         """Set data as [{"date": str, "value": float (1-5)}, ...]."""
         self._data = data or []
+        self._update_accessible_description()
         self.update()
+
+    def _update_accessible_description(self):
+        if not self._data:
+            self.setAccessibleDescription("No data available.")
+            return
+        vals = [d["value"] for d in self._data]
+        avg = sum(vals) / len(vals)
+        parts = [f"{d.get('date', '?')}: {d['value']:.1f}" for d in self._data[-6:]]
+        desc = f"Effectiveness trend with {len(self._data)} data points. Average: {avg:.1f}/5. Recent: " + "; ".join(parts)
+        self.setAccessibleDescription(desc)
 
     def paintEvent(self, event):
         if not self._data:
@@ -116,5 +128,12 @@ class LineChart(QWidget):
             painter.drawText(rect,
                              Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop,
                              self._data[i].get("date", ""))
+
+        # Focus indicator
+        if self.hasFocus():
+            focus_pen = QPen(QColor(c["primary"]), 2, Qt.PenStyle.DashLine)
+            painter.setPen(focus_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(QRectF(1, 1, w - 2, h - 2), 4, 4)
 
         painter.end()

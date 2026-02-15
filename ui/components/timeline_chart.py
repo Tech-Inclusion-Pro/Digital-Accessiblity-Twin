@@ -22,6 +22,7 @@ class TimelineChart(QWidget):
         self._data: list[dict] = []
         self.setFixedHeight(self.FIXED_HEIGHT)
         self.setAccessibleName("Activity timeline")
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
 
     def set_data(self, data: list[dict]):
         """Set data as [{"date": str, "label": str, "sublabel": str}, ...].
@@ -31,7 +32,16 @@ class TimelineChart(QWidget):
         self._data = (data or [])[-MAX_ENTRIES:]
         total_w = max(self.ENTRY_WIDTH * len(self._data) + 40, 200)
         self.setMinimumWidth(total_w)
+        self._update_accessible_description()
         self.update()
+
+    def _update_accessible_description(self):
+        if not self._data:
+            self.setAccessibleDescription("No timeline entries.")
+            return
+        parts = [f"{d.get('date', '?')}: {d.get('label', '')}" for d in self._data[-6:]]
+        desc = f"Timeline with {len(self._data)} entries. Recent: " + "; ".join(parts)
+        self.setAccessibleDescription(desc)
 
     def paintEvent(self, event):
         if not self._data:
@@ -98,5 +108,14 @@ class TimelineChart(QWidget):
                     Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop,
                     sublabel[:18],
                 )
+
+        # Focus indicator
+        if self.hasFocus():
+            focus_pen = QPen(QColor(c["primary"]), 2, Qt.PenStyle.DashLine)
+            painter.setPen(focus_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(
+                QRectF(1, 1, self.width() - 2, h - 2), 4, 4
+            )
 
         painter.end()

@@ -22,6 +22,7 @@ class HorizontalBarChart(QWidget):
         super().__init__(parent)
         self._data: list[dict] = []
         self.setAccessibleName("Horizontal bar chart")
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
 
     def set_data(self, data: list[dict]):
         """Set data as [{"label": str, "value": int/float}, ...]."""
@@ -29,7 +30,16 @@ class HorizontalBarChart(QWidget):
         row_h = self.BAR_HEIGHT + self.ROW_SPACING
         total = self.PADDING_TOP + row_h * max(len(self._data), 1) + self.PADDING_BOTTOM
         self.setFixedHeight(total)
+        self._update_accessible_description()
         self.update()
+
+    def _update_accessible_description(self):
+        """Build a text summary of the chart data for screen readers."""
+        if not self._data:
+            self.setAccessibleDescription("No data available.")
+            return
+        parts = [f"{d['label']}: {d['value']}" for d in self._data]
+        self.setAccessibleDescription("Bar chart data: " + "; ".join(parts))
 
     def paintEvent(self, event):
         if not self._data:
@@ -78,5 +88,12 @@ class HorizontalBarChart(QWidget):
             )
 
             y += self.BAR_HEIGHT + self.ROW_SPACING
+
+        # Focus indicator
+        if self.hasFocus():
+            focus_pen = QPen(QColor(c["primary"]), 2, Qt.PenStyle.DashLine)
+            painter.setPen(focus_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(QRectF(1, 1, w - 2, self.height() - 2), 4, 4)
 
         painter.end()
