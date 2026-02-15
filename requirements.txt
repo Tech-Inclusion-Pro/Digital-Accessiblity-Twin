@@ -3,3 +3,5 @@ SQLAlchemy>=2.0
 bcrypt
 aiohttp
 cryptography
+python-docx
+openpyxl
