@@ -51,7 +51,7 @@ class PasswordRecoveryDialog(QDialog):
         self.username = None
         self.has_q2 = False
         self.setWindowTitle("Recover Password")
-        self.setMinimumWidth(420)
+        self.setMinimumWidth(300)
         self.setMaximumWidth(600)
         self.setAccessibleName("Password recovery dialog")
         self._build()
@@ -340,11 +340,11 @@ class LoginScreen(QWidget):
         # Card container — responsive width
         self.container = QFrame()
         self.container.setObjectName("loginCard")
-        self.container.setMinimumWidth(420)
+        self.container.setMinimumWidth(300)
         self.container.setMaximumWidth(600)
         self.container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         clayout = QVBoxLayout(self.container)
-        clayout.setContentsMargins(36, 28, 36, 28)
+        clayout.setContentsMargins(24, 28, 24, 28)
         clayout.setSpacing(12)
 
         # Logo
@@ -399,6 +399,8 @@ class LoginScreen(QWidget):
             btn.setAccessibleName(f"{label} tab")
             btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            btn.setMinimumHeight(40)
             idx = i
             btn.clicked.connect(lambda checked, x=idx: self._switch_tab(x))
             btn_row.addWidget(btn)
@@ -661,8 +663,8 @@ class LoginScreen(QWidget):
                 btn.setStyleSheet(f"""
                     QPushButton {{
                         background: transparent; border: none;
-                        color: white; font-size: 13pt; font-weight: bold;
-                        padding: 12px 0; min-height: 0; min-width: 0;
+                        color: white; font-size: 10pt; font-weight: bold;
+                        padding: 10px 4px;
                     }}
                 """)
                 self.underlines[i].setStyleSheet(f"background-color: {accent_color};")
@@ -670,8 +672,8 @@ class LoginScreen(QWidget):
                 btn.setStyleSheet(f"""
                     QPushButton {{
                         background: transparent; border: none;
-                        color: {c['text_muted']}; font-size: 13pt; font-weight: bold;
-                        padding: 12px 0; min-height: 0; min-width: 0;
+                        color: {c['text_muted']}; font-size: 10pt; font-weight: bold;
+                        padding: 10px 4px;
                     }}
                     QPushButton:hover {{ color: rgba(255,255,255,0.7); }}
                 """)
