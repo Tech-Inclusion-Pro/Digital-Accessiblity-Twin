@@ -234,22 +234,27 @@ Student supports are organized across seven categories aligned with educational 
 
 ### Comprehensive Accessibility (WCAG 2.1 AA)
 - **Font scaling** — Small, Medium, Large, Extra Large presets
+- **Text spacing controls** — adjustable letter spacing (0-8px), word spacing (0-12px), and line height extra (0-12px) applied via QSS (WCAG 1.4.12)
 - **Color blind modes** — Protanopia, Deuteranopia, Tritanopia, Monochrome (based on Wong 2011 palette)
-- **High contrast mode** — enhanced text visibility
+- **High contrast mode** — enhanced text visibility with improved error/success color overrides
 - **Dyslexia-friendly font** toggle
 - **Custom cursors** — Large black, Large white, Crosshair, High visibility (yellow/black), Pointer with trail
 - **Reading ruler** — horizontal highlight band that follows cursor position
-- **Reduced motion** — disable animations
-- **Enhanced focus indicators** — thicker outlines on focused elements
+- **Reduced motion** — disables all CSS transitions and animations via QSS enforcement
+- **Always-visible focus indicators** — 2px focus outlines on all focusable elements by default; enhanced mode increases to 4px (WCAG 2.4.7)
+- **Skip to Main Content** — hidden button in both dashboards appears on focus and jumps past sidebar navigation (WCAG 2.4.1)
 - **Device-level persistence** — preferences saved to `~/.accesstwin/` and restored before login
 - **Pre-login access** — accessibility toolbar visible on the login screen
+- **Delete confirmations** — all destructive actions (profile item removal, AI config clear) require explicit confirmation (WCAG 3.3.4)
 
 ### Keyboard Navigation
 - All interactive widgets have `StrongFocus` policy
-- Labels linked to inputs via `setBuddy()`
+- Labels linked to inputs via `setBuddy()` with mnemonic accelerators
+- Chart widgets are keyboard-focusable with painted focus indicators
 - Minimum 44x44px touch targets
 - Logical tab order on every screen
 - Focus set automatically after screen transitions
+- Error messages focus the relevant input field after dismissal
 - `Ctrl+/` — Keyboard shortcuts reference dialog
 - `Ctrl+Q` — Quit application
 
@@ -576,14 +581,15 @@ Available on the login screen with quick controls for:
 - Full settings button
 
 ### Full Accessibility Panel
-Accessed via the "Settings" button, with options organized into four groups:
+Accessed via the "Settings" button, with options organized into five groups:
 
 | Group | Settings |
 |-------|----------|
 | **Text & Font** | Font size (4 scales), dyslexia-friendly font |
+| **Text Spacing** | Letter spacing (0-8px), word spacing (0-12px), line height extra (0-12px) |
 | **Colors & Contrast** | High contrast mode, color blind mode (5 options) |
 | **Cursor & Reading** | Custom cursor (6 styles), reading ruler overlay |
-| **Motion & Focus** | Reduced motion, enhanced focus indicators |
+| **Motion & Focus** | Reduced motion (disables animations), enhanced focus indicators (thicker outlines) |
 
 ### Color Blind Modes
 Based on the **Wong 2011** color palette (Nature Methods), ensuring all UI elements remain distinguishable:
@@ -596,9 +602,19 @@ Based on the **Wong 2011** color palette (Nature Methods), ensuring all UI eleme
 | Monochrome | Grayscale | Full grayscale palette |
 
 ### WCAG 2.1 AA Compliance
-- All text meets minimum contrast ratios (4.5:1 normal, 3:1 large)
-- Every interactive element has an accessible name and description
-- Full keyboard operability with visible focus indicators
+- **1.1.1 Non-text Content** — all charts provide accessible descriptions with data summaries; decorative icons marked with empty accessible names; UDL/POUR tags include text prefixes ("UDL:" / "POUR:") so they are not color-only
+- **1.3.1 Info and Relationships** — form labels linked to inputs via `setBuddy()` with mnemonic accelerators
+- **1.4.1 Use of Color** — UDL/POUR tags distinguished by text prefix, not just color
+- **1.4.3 Contrast** — error (#ff6b7a) and success (#4cce5f) colors meet 4.5:1 ratio on dark backgrounds; input borders at 35% opacity for 3:1+ non-text contrast
+- **1.4.11 Non-text Contrast** — input borders increased from 15% to 35% opacity; chart focus indicators use dashed primary-color borders
+- **1.4.12 Text Spacing** — adjustable letter spacing, word spacing, and line height in accessibility panel
+- **2.1.1 Keyboard** — all chart widgets accept keyboard focus via `TabFocus` policy
+- **2.4.1 Bypass Blocks** — "Skip to Main Content" button in both dashboards
+- **2.4.7 Focus Visible** — focus outlines render on all elements by default (2px); enhanced mode increases to 4px
+- **3.1.1 Language of Page** — application locale set to English via `QLocale`
+- **3.3.1 Error Identification** — validation errors focus the relevant input field
+- **3.3.4 Error Prevention** — delete confirmations on all destructive actions
+- **4.1.2 Name, Role, Value** — chart widgets expose `accessibleName` and `accessibleDescription` with full data summaries
 - Touch targets minimum 44x44px
 - Screen reader compatible via Qt accessibility API
 
@@ -652,6 +668,7 @@ python -m pytest tests/ -v
 - [x] AI model setup guide with platform-specific instructions (Mac/Windows/Linux)
 - [x] Voice input (speech-to-text) with microphone buttons on all text fields
 - [x] Timeline view and progress charts (QPainter-based, no external dependencies)
+- [x] WCAG 2.1 AA compliance audit and comprehensive fixes (16 issues resolved across 19 files)
 
 ### Phase 3 (Current) — Teacher Tools & AI Analysis
 - [x] Document upload and management
@@ -678,6 +695,29 @@ python -m pytest tests/ -v
 ---
 
 ## Changelog
+
+### v2.4.0 — WCAG 2.1 AA Compliance Audit & Fixes (2026-02-15)
+
+**Added**
+- **Text spacing controls** (`ui/components/accessibility_panel.py`, `ui/accessibility.py`) — new "Text Spacing" group in accessibility panel with letter spacing (0-8px), word spacing (0-12px), and line height extra (0-12px) spin boxes; values applied via QSS and persisted in preferences (WCAG 1.4.12)
+- **Skip to Main Content** (`ui/screens/student/dashboard.py`, `ui/screens/teacher/dashboard.py`) — visually hidden button that appears on keyboard focus and jumps past sidebar navigation to the current content page (WCAG 2.4.1)
+- **Delete confirmation dialogs** (`ui/screens/student/profile_page.py`, `ui/screens/ai_settings_page.py`) — all destructive actions (removing strengths, history, goals, stakeholders, clearing AI config) now require explicit Yes/No confirmation (WCAG 3.3.4)
+- **Chart text alternatives** (`ui/components/line_chart.py`, `ui/components/horizontal_bar_chart.py`, `ui/components/timeline_chart.py`) — all chart widgets generate `accessibleDescription` with data summaries for screen readers (e.g., "Bar chart data: Sensory: 3; Academic: 5") (WCAG 1.1.1, 4.1.2)
+- **Chart keyboard focus** — all chart widgets accept keyboard focus via `TabFocus` policy and paint a dashed primary-color focus indicator when focused (WCAG 2.1.1)
+- **Application language/locale** (`main.py`) — set `QLocale.setDefault()` to English/US for assistive technology language detection (WCAG 3.1.1)
+- **Form label associations** (`ui/components/edit_item_dialog.py`, `ui/screens/student/log_experience_page.py`, `ui/screens/teacher/log_impl_page.py`) — all form labels linked to inputs via `setBuddy()` with `&` mnemonic prefixes (WCAG 1.3.1)
+- **Error-to-field focus** — validation error messages now focus the relevant input field after the dialog is dismissed (WCAG 3.3.1)
+
+**Changed**
+- **Error/success colors** (`config/settings.py`) — error changed from `#ff4d5e` to `#ff6b7a` and success from `#28a745` to `#4cce5f` for 4.5:1+ contrast ratio on dark backgrounds; high contrast mode adds brighter overrides (WCAG 1.4.3)
+- **Always-visible focus indicators** (`ui/theme_engine.py`) — focus outlines now render on all `*:focus` elements by default (2px solid primary); enhanced focus mode increases to 4px instead of being opt-in only (WCAG 2.4.7)
+- **Input border contrast** (`ui/theme_engine.py`) — input and checkbox borders increased from `rgba(255,255,255,0.15)` to `rgba(255,255,255,0.35)` for 3:1+ non-text contrast ratio (WCAG 1.4.11)
+- **Reduced motion enforcement** (`ui/theme_engine.py`) — when reduced motion is enabled, QSS now sets `transition: none` and `animation: none` globally
+- **UDL/POUR tags** (`ui/components/support_card.py`) — tags now display as "UDL: Engagement" and "POUR: Perceivable" with text prefix, not distinguished by color alone (WCAG 1.4.1)
+- **Icon accessible names** (`ui/components/stat_card.py`, `ui/components/empty_state.py`) — decorative unicode icons marked with empty `accessibleName` so screen readers skip them; category label in SupportCard gets descriptive accessible name
+- **Effectiveness rating** (`ui/components/support_card.py`) — rating label now has `accessibleName("Effectiveness rating: X out of 5")`
+
+---
 
 ### v2.3.0 — Voice Input, Progress Charts, Tutorial & Help System (2026-02-15)
 
