@@ -75,13 +75,14 @@ AccessTwin supports multiple AI providers for analyzing learning materials again
 - **Dual cloud consent** — both institutional approval and data transmission acknowledgment required
 
 ### Encrypted Database
-- **SQLite** via SQLAlchemy ORM with 8 tables:
+- **SQLite** via SQLAlchemy ORM with 9 tables:
   - `users` — accounts with role, credentials, settings
   - `student_profiles` — strengths, supports, history, hopes, stakeholders
   - `support_entries` — categorized supports with UDL/POUR mappings and effectiveness ratings
   - `documents` — uploaded teacher materials
   - `twin_evaluations` — AI analysis results with confidence scores
   - `tracking_logs` — implementation and outcome tracking
+  - `consultation_logs` — coach conversation history for AI insights analysis
   - `audit_logs` — security event trail
   - `consent_records` — data consent tracking
 - **AES-256 field-level encryption** (Fernet) for sensitive data, with PBKDF2 key derivation from machine identity
@@ -105,6 +106,34 @@ Teachers can consult an AI Digital Accessibility Coach that reads the full stude
 - **Teachers never see raw student data** — only broad theme summaries (e.g., "Strong auditory processing" instead of specific medical details)
 - **AI reads everything privately** — the coach receives full student context to give informed guidance, but its responses are phrased in general, non-identifying terms
 - **Theme mapping** — 20+ keyword patterns for strengths and 10+ for goals map specific text to broad educational themes
+- **Consultation persistence** — coach conversations are saved and used by the AI Insights feature for longitudinal analysis
+
+### AI Insights (Teacher)
+Teachers can generate AI-powered analysis of their past coach consultations for any imported student:
+
+- **Student selector** — choose from imported student twins with consultation counts
+- **Streaming output** — insights are streamed in real-time as the AI generates them
+- **POUR/UDL lens** — analysis maps student needs to Perceivable/Operable/Understandable/Robust and Engagement/Representation/Action & Expression frameworks
+- **Five analysis sections** — Consultation Overview, Question Patterns, Student Needs Analysis, Teacher Preparation Recommendations, and Growth Trajectory
+
+### My Insights (Student)
+Students can generate AI-powered analysis of their own support effectiveness:
+
+- **Support effectiveness analysis** — analyses SupportEntry ratings and TrackingLog notes, not consultation history
+- **Strengths-based** — speaks directly to the student with warm, encouraging language using first name only
+- **Five analysis sections** — What's Working Well, What Needs Attention, Patterns & Trends, Suggestions for Discussion, and Summary
+- **Self-advocacy prompts** — provides 3-5 specific conversation topics the student can raise with their teacher
+- **Empty state handling** — guides students to add supports before generating insights
+
+### AI Transparency ("How was this decided?")
+Every AI feature includes a "How was this decided?" button that opens a transparency dialog showing:
+
+- **AI Configuration** — provider type (local/cloud), provider name, and model
+- **Guiding Principles** — the disability justice principles governing the AI's behavior
+- **Privacy Rules** — exactly what privacy constraints the AI operates under
+- **Information Provided to AI** — aggregated summary of what data was sent (never raw data)
+- **Model Confidence** — honest disclosure that AI outputs are statistical and may contain inaccuracies
+- **Warnings & Limitations** — specific caveats for each feature (e.g., session drift, data volume effects)
 
 ### Outline Icon System
 All UI icons use simple geometric outline characters (Unicode line-drawing symbols) instead of colored emoji:
@@ -330,10 +359,12 @@ accesstwin/
 │   ├── document.py                  # Document model
 │   ├── evaluation.py                # TwinEvaluation model
 │   ├── tracking.py                  # TrackingLog model
+│   ├── consultation_log.py          # ConsultationLog model (coach conversations)
 │   └── audit.py                     # AuditLog + ConsentRecord models
 ├── seed_demo_data.py                    # Demo data seeder (5 students, 2 teachers)
 ├── ai/
 │   ├── backend_manager.py           # Unified AI facade
+│   ├── ai_settings_store.py         # Persistent AI configuration storage
 │   ├── privacy_aggregator.py        # Two-tier privacy aggregation engine
 │   ├── ollama_client.py             # Ollama local client
 │   ├── lmstudio_client.py           # LM Studio client (OpenAI-compatible)
@@ -341,7 +372,9 @@ accesstwin/
 │   ├── cloud_client.py              # OpenAI + Anthropic cloud client
 │   └── prompts/
 │       ├── __init__.py              # System prompt stubs
-│       └── coach_prompt.py          # AI coach system prompt builder
+│       ├── coach_prompt.py          # AI coach system prompt builder
+│       ├── insights_prompt.py       # Teacher AI insights system prompt
+│       └── student_insights_prompt.py # Student My Insights system prompt
 ├── ui/
 │   ├── accessibility.py             # AccessibilityManager singleton
 │   ├── accessibility_prefs.py       # Device-level prefs persistence
@@ -355,13 +388,15 @@ accesstwin/
 │   ├── screens/
 │   │   ├── login_screen.py          # Three-tab login (Student/Teacher/Register)
 │   │   ├── setup_wizard.py          # AI backend configuration wizard
+│   │   ├── ai_settings_page.py      # AI backend settings page (sidebar)
 │   │   ├── student/
 │   │   │   ├── dashboard.py         # Student sidebar + stacked pages
 │   │   │   ├── home_page.py         # Student home with stats and supports grid
 │   │   │   ├── profile_page.py      # 5-tab profile editor (card-based)
 │   │   │   ├── log_experience_page.py  # Student experience logging
 │   │   │   ├── tracking_page.py     # Student tracking timeline
-│   │   │   └── export_page.py       # Digital Twin export
+│   │   │   ├── export_page.py       # Digital Twin export
+│   │   │   └── insights_page.py     # Student My Insights (AI support analysis)
 │   │   └── teacher/
 │   │       ├── dashboard.py         # Teacher sidebar + stacked pages
 │   │       ├── home_page.py         # Teacher home with stats and student grid
@@ -369,7 +404,8 @@ accesstwin/
 │   │       ├── evaluate_page.py     # Document upload and AI evaluation
 │   │       ├── log_impl_page.py     # Teacher implementation logging
 │   │       ├── tracking_page.py     # Teacher tracking and gap analysis
-│   │       └── coach_dialog.py      # AI Digital Accessibility Coach dialog
+│   │       ├── coach_dialog.py      # AI Digital Accessibility Coach dialog
+│   │       └── insights_page.py     # Teacher AI Insights (consultation analysis)
 │   └── components/
 │       ├── accessibility_panel.py   # Full accessibility preferences dialog
 │       ├── accessibility_toolbar.py # Quick-access font/contrast/color bar
@@ -381,7 +417,8 @@ accesstwin/
 │       ├── rating_widget.py         # Star rating input widget
 │       ├── shortcuts_dialog.py      # Keyboard shortcuts reference (Ctrl+/)
 │       ├── stat_card.py             # Dashboard metric card
-│       └── support_card.py          # Support entry card with UDL/POUR tags
+│       ├── support_card.py          # Support entry card with UDL/POUR tags
+│       └── transparency_dialog.py   # AI transparency "How was this decided?" dialog
 ├── utils/
 │   ├── encryption.py                # AES-256 Fernet encryption manager
 │   └── validators.py                # Input validation (username, password, email)
@@ -520,6 +557,10 @@ python -m pytest tests/ -v
 - [x] Implementation tracking and outcome logging
 - [x] Privacy-preserving AI Coach with two-tier data aggregation
 - [x] Privacy Aggregator — teacher-safe themes vs. confidential AI-only context
+- [x] Consultation logging — coach conversations persisted for longitudinal analysis
+- [x] Teacher AI Insights — analyse past consultations through POUR/UDL lenses
+- [x] Student My Insights — AI analyses support effectiveness with self-advocacy prompts
+- [x] AI Transparency Dialog — "How was this decided?" on all AI features
 - [ ] AI-powered material evaluation against student profiles
 - [ ] Suggestion engine with confidence scores
 
@@ -533,6 +574,26 @@ python -m pytest tests/ -v
 ---
 
 ## Changelog
+
+### v2.1.0 — AI Insights, Student My Insights & AI Transparency (2026-02-15)
+
+**Added**
+- **Teacher AI Insights page** (`ui/screens/teacher/insights_page.py`) — analyses past coach consultations for any imported student through POUR/UDL lenses; student selector with consultation counts, streaming AI output, five analysis sections (Consultation Overview, Question Patterns, Student Needs Analysis, Teacher Preparation Recommendations, Growth Trajectory)
+- **Student My Insights page** (`ui/screens/student/insights_page.py`) — AI analyses the student's own support effectiveness ratings and tracking log notes; speaks directly to the student with strengths-based language; five sections (What's Working Well, What Needs Attention, Patterns & Trends, Suggestions for Discussion, Summary); provides self-advocacy conversation prompts
+- **AI Transparency dialog** (`ui/components/transparency_dialog.py`) — reusable "How was this decided?" dialog with `TransparencyInfo` dataclass; shows AI configuration, guiding principles, privacy rules, data summary, model confidence disclaimer, and warnings/limitations; added to Coach dialog, Teacher Insights, and Student Insights
+- **Teacher AI Insights prompt** (`ai/prompts/insights_prompt.py`) — system prompt builder for analysing consultation history through POUR/UDL lenses with privacy-preserving rules
+- **Student insights prompt** (`ai/prompts/student_insights_prompt.py`) — system prompt builder that analyses support effectiveness data, speaking directly to the student with encouraging tone
+- **Consultation logging** (`models/consultation_log.py`) — persists coach conversations with profile_id, teacher_user_id, summary, message count, and full conversation JSON; enables longitudinal analysis in AI Insights
+- **AI settings page** (`ui/screens/ai_settings_page.py`) — sidebar-accessible AI backend configuration page
+- **AI settings store** (`ai/ai_settings_store.py`) — persistent storage for AI backend configuration
+
+**Changed**
+- **Student dashboard** — added "My Insights" nav item at index 5 (AI Settings bumped to index 6) with breadcrumb support
+- **Teacher dashboard** — added "AI Insights" nav item with breadcrumb support
+- **Coach dialog** — added "How was this decided?" transparency button in footer row; conversations now auto-save to ConsultationLog on close; past consultations loaded into system prompt context
+- **Backend manager** — added `save_config()` and `load_config()` methods for persistent AI configuration
+
+---
 
 ### v2.0.0 — Card-Based Profiles, Privacy Aggregation & Outline Icons (2026-02-14)
 
