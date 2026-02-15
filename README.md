@@ -58,6 +58,7 @@ The application follows a **local-first, privacy-focused** architecture. All dat
 - **Teacher Login** — Deep blue accent (#3a2b95)
 - **Register** — Purple accent (#6f2fa6) with role selector, password confirmation, security question, and terms consent
 - Password visibility toggle, forgot password flow, and pre-login accessibility toolbar
+- **Save login details** — optional checkbox on student and teacher login tabs that persists credentials locally via QSettings for convenient re-login
 
 ### AI Backend Selector
 AccessTwin supports multiple AI providers for analyzing learning materials against student profiles:
@@ -75,7 +76,7 @@ AccessTwin supports multiple AI providers for analyzing learning materials again
 - **Dual cloud consent** — both institutional approval and data transmission acknowledgment required
 
 ### Encrypted Database
-- **SQLite** via SQLAlchemy ORM with 9 tables:
+- **SQLite** via SQLAlchemy ORM with 10 tables:
   - `users` — accounts with role, credentials, settings
   - `student_profiles` — strengths, supports, history, hopes, stakeholders
   - `support_entries` — categorized supports with UDL/POUR mappings and effectiveness ratings
@@ -83,6 +84,7 @@ AccessTwin supports multiple AI providers for analyzing learning materials again
   - `twin_evaluations` — AI analysis results with confidence scores
   - `tracking_logs` — implementation and outcome tracking
   - `consultation_logs` — coach conversation history for AI insights analysis
+  - `insight_logs` — AI-generated insight reports with timestamps and chat conversations
   - `audit_logs` — security event trail
   - `consent_records` — data consent tracking
 - **AES-256 field-level encryption** (Fernet) for sensitive data, with PBKDF2 key derivation from machine identity
@@ -115,6 +117,9 @@ Teachers can generate AI-powered analysis of their past coach consultations for 
 - **Streaming output** — insights are streamed in real-time as the AI generates them
 - **POUR/UDL lens** — analysis maps student needs to Perceivable/Operable/Understandable/Robust and Engagement/Representation/Action & Expression frameworks
 - **Five analysis sections** — Consultation Overview, Question Patterns, Student Needs Analysis, Teacher Preparation Recommendations, and Growth Trajectory
+- **Insight saving with timestamps** — each generated insight is automatically saved with a timestamp to the InsightLog database
+- **History browsing** — dropdown selector to revisit any past insight for a given student
+- **Chat with insights** — after generating or selecting an insight, teachers can chat with the AI to ask follow-up questions; conversations are persisted and restored when revisiting saved insights
 
 ### My Insights (Student)
 Students can generate AI-powered analysis of their own support effectiveness:
@@ -124,6 +129,26 @@ Students can generate AI-powered analysis of their own support effectiveness:
 - **Five analysis sections** — What's Working Well, What Needs Attention, Patterns & Trends, Suggestions for Discussion, and Summary
 - **Self-advocacy prompts** — provides 3-5 specific conversation topics the student can raise with their teacher
 - **Empty state handling** — guides students to add supports before generating insights
+- **Insight saving with timestamps** — each generated insight is automatically saved with a timestamp to the InsightLog database
+- **History browsing** — dropdown selector to revisit any past insight
+- **Chat with insights** — students can chat with the AI about any insight using a warm, strengths-based tone; conversations are persisted and restored when revisiting saved insights
+
+### Student Data Export
+Students can export their complete Digital Twin data for portability:
+
+- **JSON export** — full twin data including profile, supports, tracking logs, and AI insights with chat conversations
+- **Excel export** — four styled sheets (Profile, Support Entries, Tracking Logs, AI Insights) via openpyxl with purple-branded headers
+- **DOCX export** — formatted Word document with headings, bullet lists, support tables, and insight chat transcripts via python-docx
+- **Timestamped filenames** — all exports use `{name}_twin_{YYYYMMDD_HHMM}.{ext}` format
+
+### Teacher Report Export
+Teachers can generate and export AI-powered student reports as Word documents:
+
+- **Report configuration dialog** — popup with checkboxes to toggle report sections (Profile Summary, Support Entries, Tracking Logs, Consultation History, AI Insights, Insight Chat Conversations) and a rich text area for AI guidance
+- **AI-generated reports** — the AI generates a formatted report based on selected data and teacher guidance, streamed in real-time
+- **Per-student reports** — select any imported student from a dropdown to generate their report
+- **DOCX export** — markdown-to-DOCX converter produces a professionally formatted Word document with purple branding, student name, and generation date
+- **Teacher guidance** — free-text area lets teachers shape the report tone, emphasis, and structure (e.g., "Focus on progress in reading supports" or "Write for a parent audience")
 
 ### AI Transparency ("How was this decided?")
 Every AI feature includes a "How was this decided?" button that opens a transparency dialog showing:
@@ -285,6 +310,8 @@ Once installed, launch from **Finder**, **Spotlight** (search "AccessTwin"), or 
 | bcrypt | latest | Password hashing |
 | aiohttp | latest | Async HTTP for AI backends |
 | cryptography | latest | AES-256 field encryption |
+| python-docx | latest | Word document generation (DOCX export) |
+| openpyxl | latest | Excel workbook generation (XLSX export) |
 
 ---
 
@@ -360,6 +387,7 @@ accesstwin/
 │   ├── evaluation.py                # TwinEvaluation model
 │   ├── tracking.py                  # TrackingLog model
 │   ├── consultation_log.py          # ConsultationLog model (coach conversations)
+│   ├── insight_log.py               # InsightLog model (AI insights with chat)
 │   └── audit.py                     # AuditLog + ConsentRecord models
 ├── seed_demo_data.py                    # Demo data seeder (5 students, 2 teachers)
 ├── ai/
@@ -395,8 +423,8 @@ accesstwin/
 │   │   │   ├── profile_page.py      # 5-tab profile editor (card-based)
 │   │   │   ├── log_experience_page.py  # Student experience logging
 │   │   │   ├── tracking_page.py     # Student tracking timeline
-│   │   │   ├── export_page.py       # Digital Twin export
-│   │   │   └── insights_page.py     # Student My Insights (AI support analysis)
+│   │   │   ├── export_page.py       # Digital Twin export (JSON, Excel, DOCX)
+│   │   │   └── insights_page.py     # Student My Insights with saving & chat
 │   │   └── teacher/
 │   │       ├── dashboard.py         # Teacher sidebar + stacked pages
 │   │       ├── home_page.py         # Teacher home with stats and student grid
@@ -405,7 +433,8 @@ accesstwin/
 │   │       ├── log_impl_page.py     # Teacher implementation logging
 │   │       ├── tracking_page.py     # Teacher tracking and gap analysis
 │   │       ├── coach_dialog.py      # AI Digital Accessibility Coach dialog
-│   │       └── insights_page.py     # Teacher AI Insights (consultation analysis)
+│   │       ├── insights_page.py     # Teacher AI Insights with saving & chat
+│   │       └── export_page.py       # Teacher report export (AI-generated DOCX)
 │   └── components/
 │       ├── accessibility_panel.py   # Full accessibility preferences dialog
 │       ├── accessibility_toolbar.py # Quick-access font/contrast/color bar
@@ -558,22 +587,48 @@ python -m pytest tests/ -v
 - [x] Privacy-preserving AI Coach with two-tier data aggregation
 - [x] Privacy Aggregator — teacher-safe themes vs. confidential AI-only context
 - [x] Consultation logging — coach conversations persisted for longitudinal analysis
-- [x] Teacher AI Insights — analyse past consultations through POUR/UDL lenses
-- [x] Student My Insights — AI analyses support effectiveness with self-advocacy prompts
+- [x] Teacher AI Insights — analyse past consultations through POUR/UDL lenses with insight saving, history, and chat
+- [x] Student My Insights — AI analyses support effectiveness with self-advocacy prompts, insight saving, history, and chat
 - [x] AI Transparency Dialog — "How was this decided?" on all AI features
+- [x] Student data export — JSON, Excel, and DOCX with full twin data including insights and chat transcripts
+- [x] Teacher report export — AI-generated DOCX reports with configurable sections and teacher guidance
+- [x] Save login details — optional credential persistence for student and teacher logins
 - [ ] AI-powered material evaluation against student profiles
 - [ ] Suggestion engine with confidence scores
 
 ### Phase 4 — Collaboration & Reporting
 - [ ] Student-teacher profile sharing
 - [ ] Progress reporting and analytics
-- [ ] Export to PDF/accessible formats
 - [ ] Multi-student batch analysis
 - [ ] Institutional admin features
 
 ---
 
 ## Changelog
+
+### v2.2.0 — Insight Saving & Chat, Data Export & Save Login (2026-02-15)
+
+**Added**
+- **InsightLog model** (`models/insight_log.py`) — new database table for persisting AI-generated insight reports with timestamps and JSON-serialized chat conversations; automatic schema migration adds `conversation_json` column to existing databases
+- **Insight saving with timestamps** — both student and teacher insights pages auto-save each generated insight with a UTC timestamp to the InsightLog database
+- **Insight history browsing** — dropdown selector on both insights pages to revisit any past insight; teacher history filters by selected student
+- **AI chat on insights** — after generating or selecting an insight, users can chat with the AI to ask follow-up questions; chat conversations are persisted to InsightLog and restored when revisiting saved insights; student chat uses warm, strengths-based tone; teacher chat uses professional tone referencing POUR/UDL frameworks
+- **Student multi-format export** (`ui/screens/student/export_page.py`) — students can export their complete Digital Twin data to JSON (full twin dict), Excel (4 styled sheets via openpyxl), or DOCX (formatted document with tables and chat transcripts via python-docx); all exports include AI insight history with conversations; timestamped default filenames
+- **Teacher report export** (`ui/screens/teacher/export_page.py`) — new page with ReportConfigDialog popup for toggling 6 report sections and providing AI guidance text; AI generates formatted reports streamed in real-time; markdown-to-DOCX converter produces branded Word documents with student name and generation date
+- **Save login details** — optional checkbox on student and teacher login tabs that persists credentials locally via QSettings with base64 encoding; auto-fills username and password on next launch when enabled
+- **Teacher export sidebar item** — "Export Report" added to teacher dashboard navigation with breadcrumb support
+
+**Changed**
+- **Login password fields** — eliminated QFrame wrapper approach; password fields now use identical `_apply_input_style` as username fields with overlay eye buttons via QHBoxLayout + setTextMargins for consistent sizing across all input boxes
+- **Login layout** — increased spacing before Sign In button to prevent visual overlap with password fields
+- **Student insights page** — full rewrite with InsightLog integration, history dropdown, chat UI with bubble messages, and streaming chat worker
+- **Teacher insights page** — full rewrite with InsightLog integration, per-student history filtering, chat UI, and streaming chat worker
+- **Student export page** — rewritten from JSON-only to three-format export with comprehensive data including insights
+- **Teacher dashboard** — added Export Report nav item (index 6), AI Settings bumped to index 7
+- **Database manager** — registers InsightLog model and runs migration to add conversation_json column
+- **Dependencies** — added python-docx and openpyxl to requirements.txt
+
+---
 
 ### v2.1.0 — AI Insights, Student My Insights & AI Transparency (2026-02-15)
 
