@@ -41,8 +41,24 @@ class DatabaseManager:
         from models.tracking import TrackingLog  # noqa: F401
         from models.audit import AuditLog, ConsentRecord  # noqa: F401
         from models.consultation_log import ConsultationLog  # noqa: F401
+        from models.insight_log import InsightLog  # noqa: F401
 
         Base.metadata.create_all(self.engine)
+
+        # Ensure conversation_json column exists on insight_logs
+        # (added after initial table creation)
+        from sqlalchemy import inspect as sa_inspect, text
+        inspector = sa_inspect(self.engine)
+        if "insight_logs" in inspector.get_table_names():
+            columns = [col["name"] for col in inspector.get_columns("insight_logs")]
+            if "conversation_json" not in columns:
+                with self.engine.connect() as conn:
+                    conn.execute(text(
+                        "ALTER TABLE insight_logs "
+                        "ADD COLUMN conversation_json TEXT DEFAULT '[]'"
+                    ))
+                    conn.commit()
+
         self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     def get_session(self):
