@@ -1,5 +1,6 @@
 """Three-tab login screen: Student Login / Teacher Login / Register."""
 
+import base64
 import json
 import os
 import sys
@@ -10,7 +11,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QFrame, QMessageBox, QCheckBox, QComboBox,
     QStackedWidget, QScrollArea, QSizePolicy, QDialog,
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from PyQt6.QtCore import Qt, pyqtSignal, QSettings, QTimer
 from PyQt6.QtGui import QPixmap
 
 
@@ -578,22 +579,8 @@ class LoginScreen(QWidget):
             widget = entry["widget"]
             if kind == "input":
                 self._apply_input_style(widget, c)
-            elif kind == "pw_wrapper":
-                obj_name = widget.objectName()
-                widget.setStyleSheet(f"""
-                    QFrame#{obj_name} {{
-                        background-color: {c['dark_input']};
-                        border: 1px solid rgba(255,255,255,0.15);
-                        border-radius: 12px;
-                    }}
-                """)
-            elif kind == "pw_input":
-                widget.setStyleSheet(f"""
-                    QLineEdit {{
-                        background: transparent; border: none;
-                        color: {c['text']}; padding: 8px 14px; font-size: 13pt;
-                    }}
-                """)
+            elif kind == "remember_cb":
+                widget.setStyleSheet(f"color: {c['text']}; font-size: 11pt;")
             elif kind == "eye_btn":
                 widget.setStyleSheet(f"""
                     QPushButton {{
@@ -709,39 +696,17 @@ class LoginScreen(QWidget):
         layout.addWidget(p_label)
         layout.addSpacing(6)
 
-        pw_wrapper = QFrame()
-        pw_wrapper.setObjectName(f"{role}PwWrapper")
-        pw_wrapper.setMinimumHeight(48)
-        pw_wrapper.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        pw_wrapper.setStyleSheet(f"""
-            QFrame#{role}PwWrapper {{
-                background-color: {c['dark_input']};
-                border: 1px solid rgba(255,255,255,0.15);
-                border-radius: 12px;
-            }}
-        """)
-        self._styled_widgets.append({"kind": "pw_wrapper", "widget": pw_wrapper})
-        pw_lay = QHBoxLayout(pw_wrapper)
-        pw_lay.setContentsMargins(0, 0, 4, 0)
-        pw_lay.setSpacing(0)
-
         password = QLineEdit()
         password.setPlaceholderText("Enter your password")
         password.setEchoMode(QLineEdit.EchoMode.Password)
         password.setAccessibleName(f"{role.title()} login password")
         password.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        password.setMinimumHeight(44)
-        password.setStyleSheet(f"""
-            QLineEdit {{
-                background: transparent; border: none;
-                color: {c['text']}; padding: 8px 14px; font-size: 13pt;
-            }}
-        """)
-        self._styled_widgets.append({"kind": "pw_input", "widget": password})
-        pw_lay.addWidget(password)
+        self._apply_input_style(password, c)
+        self._styled_widgets.append({"kind": "input", "widget": password})
+        password.setTextMargins(0, 0, 36, 0)
 
         eye = QPushButton("\u25C9")
-        eye.setFixedSize(36, 36)
+        eye.setFixedSize(32, 32)
         eye.setAccessibleName("Toggle password visibility")
         eye.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         eye.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -755,10 +720,15 @@ class LoginScreen(QWidget):
         """)
         self._styled_widgets.append({"kind": "eye_btn", "widget": eye})
         eye.clicked.connect(lambda: self._toggle_pw(role, password, eye))
-        pw_lay.addWidget(eye)
+
+        eye_lay = QHBoxLayout(password)
+        eye_lay.setContentsMargins(0, 0, 8, 0)
+        eye_lay.setSpacing(0)
+        eye_lay.addStretch()
+        eye_lay.addWidget(eye)
 
         p_label.setBuddy(password)
-        layout.addWidget(pw_wrapper)
+        layout.addWidget(password)
         layout.addSpacing(12)
 
         # Forgot password
@@ -781,7 +751,16 @@ class LoginScreen(QWidget):
         forgot.clicked.connect(self._on_forgot)
         row.addWidget(forgot)
         layout.addLayout(row)
-        layout.addSpacing(12)
+        layout.addSpacing(8)
+
+        # Save login details
+        remember_cb = QCheckBox("Save login details")
+        remember_cb.setAccessibleName("Save login details for next time")
+        remember_cb.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        remember_cb.setStyleSheet(f"color: {c['text']}; font-size: 11pt;")
+        self._styled_widgets.append({"kind": "remember_cb", "widget": remember_cb})
+        layout.addWidget(remember_cb)
+        layout.addSpacing(20)
 
         # Error
         error_label = QLabel("")
@@ -807,9 +786,25 @@ class LoginScreen(QWidget):
 
         layout.addStretch()
 
-        # Store references for accessibility
+        # Load saved credentials
+        settings = QSettings("AccessTwin", "Credentials")
+        saved_user = settings.value(f"{role}/username", "")
+        saved_pass_b64 = settings.value(f"{role}/password", "")
+        if saved_user:
+            username.setText(saved_user)
+            if saved_pass_b64:
+                try:
+                    password.setText(
+                        base64.b64decode(saved_pass_b64.encode()).decode()
+                    )
+                except Exception:
+                    pass
+            remember_cb.setChecked(True)
+
+        # Store references
         setattr(self, f"_{role}_username", username)
         setattr(self, f"_{role}_password", password)
+        setattr(self, f"_{role}_remember", remember_cb)
 
         return page
 
@@ -864,37 +859,17 @@ class LoginScreen(QWidget):
         p_label = self._field_label("Password", c)
         layout.addWidget(p_label)
         layout.addSpacing(6)
-        pw_wrap = QFrame()
-        pw_wrap.setObjectName("regPwWrap")
-        pw_wrap.setMinimumHeight(48)
-        pw_wrap.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        pw_wrap.setStyleSheet(f"""
-            QFrame#regPwWrap {{
-                background-color: {c['dark_input']};
-                border: 1px solid rgba(255,255,255,0.15);
-                border-radius: 12px;
-            }}
-        """)
-        self._styled_widgets.append({"kind": "pw_wrapper", "widget": pw_wrap})
-        pw_l = QHBoxLayout(pw_wrap)
-        pw_l.setContentsMargins(0, 0, 4, 0)
-        pw_l.setSpacing(0)
         self.reg_password = QLineEdit()
         self.reg_password.setPlaceholderText("Create a password (min 8 characters)")
         self.reg_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.reg_password.setAccessibleName("Create password")
         self.reg_password.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.reg_password.setMinimumHeight(44)
-        self.reg_password.setStyleSheet(f"""
-            QLineEdit {{
-                background: transparent; border: none;
-                color: {c['text']}; padding: 8px 14px; font-size: 13pt;
-            }}
-        """)
-        self._styled_widgets.append({"kind": "pw_input", "widget": self.reg_password})
-        pw_l.addWidget(self.reg_password)
+        self._apply_input_style(self.reg_password, c)
+        self._styled_widgets.append({"kind": "input", "widget": self.reg_password})
+        self.reg_password.setTextMargins(0, 0, 36, 0)
+
         reg_eye = QPushButton("\u25C9")
-        reg_eye.setFixedSize(36, 36)
+        reg_eye.setFixedSize(32, 32)
         reg_eye.setAccessibleName("Toggle password visibility")
         reg_eye.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         reg_eye.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -908,9 +883,15 @@ class LoginScreen(QWidget):
         """)
         self._styled_widgets.append({"kind": "eye_btn", "widget": reg_eye})
         reg_eye.clicked.connect(lambda: self._toggle_pw("register", self.reg_password, reg_eye))
-        pw_l.addWidget(reg_eye)
+
+        reg_eye_lay = QHBoxLayout(self.reg_password)
+        reg_eye_lay.setContentsMargins(0, 0, 8, 0)
+        reg_eye_lay.setSpacing(0)
+        reg_eye_lay.addStretch()
+        reg_eye_lay.addWidget(reg_eye)
+
         p_label.setBuddy(self.reg_password)
-        layout.addWidget(pw_wrap)
+        layout.addWidget(self.reg_password)
         layout.addSpacing(16)
 
         # Confirm password
@@ -1011,7 +992,7 @@ class LoginScreen(QWidget):
 
     @staticmethod
     def _apply_input_style(w: QLineEdit, c: dict):
-        w.setMinimumHeight(48)
+        w.setFixedHeight(48)
         w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         w.setStyleSheet(f"""
             QLineEdit {{
@@ -1024,7 +1005,7 @@ class LoginScreen(QWidget):
 
     @staticmethod
     def _apply_combo_style(w: QComboBox, c: dict):
-        w.setMinimumHeight(48)
+        w.setFixedHeight(48)
         w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         w.setStyleSheet(f"""
             QComboBox {{
@@ -1059,9 +1040,24 @@ class LoginScreen(QWidget):
             return
         ok, msg = self.auth.login(username, password, expected_role=role)
         if ok:
+            self._save_or_clear_credentials(role, username, password)
             self.login_successful.emit()
         else:
             self._show_error(error_label, msg)
+
+    def _save_or_clear_credentials(self, role, username, password):
+        """Persist or remove saved login details based on the checkbox."""
+        remember_cb = getattr(self, f"_{role}_remember", None)
+        settings = QSettings("AccessTwin", "Credentials")
+        if remember_cb and remember_cb.isChecked():
+            settings.setValue(f"{role}/username", username)
+            settings.setValue(
+                f"{role}/password",
+                base64.b64encode(password.encode()).decode(),
+            )
+        else:
+            settings.remove(f"{role}/username")
+            settings.remove(f"{role}/password")
 
     def _on_register(self):
         username = self.reg_username.text().strip()
