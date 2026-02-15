@@ -13,6 +13,7 @@ from ui.screens.teacher.evaluate_page import TeacherEvaluatePage
 from ui.screens.teacher.log_impl_page import TeacherLogImplPage
 from ui.screens.teacher.tracking_page import TeacherTrackingPage
 from ui.screens.teacher.insights_page import TeacherInsightsPage
+from ui.screens.teacher.export_page import TeacherExportPage
 
 NAV_ITEMS = [
     {"key": "home", "icon": "\u2302", "label": "Home"},
@@ -21,6 +22,7 @@ NAV_ITEMS = [
     {"key": "log", "icon": "\u270E", "label": "Log Implementation"},
     {"key": "tracking", "icon": "\u2630", "label": "Tracking"},
     {"key": "insights", "icon": "\u2606", "label": "AI Insights"},
+    {"key": "export", "icon": "\u25A1", "label": "Export Report"},
     {"key": "ai_settings", "icon": "\u2261", "label": "AI Settings"},
 ]
 
@@ -31,7 +33,8 @@ PAGE_MAP = {
     "log": 3,
     "tracking": 4,
     "insights": 5,
-    "ai_settings": 6,
+    "export": 6,
+    "ai_settings": 7,
 }
 
 BREADCRUMB_MAP = {
@@ -41,6 +44,7 @@ BREADCRUMB_MAP = {
     "log": ["Teacher", "Log Implementation"],
     "tracking": ["Teacher", "Tracking"],
     "insights": ["Teacher", "AI Insights"],
+    "export": ["Teacher", "Export Report"],
     "ai_settings": ["Teacher", "AI Settings"],
 }
 
@@ -99,6 +103,9 @@ class TeacherDashboard(QWidget):
         self._insights_page = TeacherInsightsPage(self.db, self.auth, self.backend_manager)
         self._stack.addWidget(self._insights_page)
 
+        self._export_page = TeacherExportPage(self.db, self.auth, self.backend_manager)
+        self._stack.addWidget(self._export_page)
+
         from ui.screens.ai_settings_page import AISettingsPage
         self._ai_settings_page = AISettingsPage(self.backend_manager)
         self._stack.addWidget(self._ai_settings_page)
@@ -139,6 +146,7 @@ class TeacherDashboard(QWidget):
             self._log_page,
             self._tracking_page,
             self._insights_page,
+            self._export_page,
             self._ai_settings_page,
         ]
         if 0 <= idx < len(pages):
