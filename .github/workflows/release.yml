@@ -63,23 +63,34 @@ jobs:
 
   build-macos-intel:
     name: macOS Intel (x86_64)
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Enable Rosetta 2
+        run: softwareupdate --install-rosetta --agree-to-license || true
 
-      - name: Install dependencies
+      - name: Install x86_64 Python via Homebrew (Rosetta 2)
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
+          arch -x86_64 /bin/bash -c '
+            eval "$(/usr/local/bin/brew shellenv 2>/dev/null || true)"
+            if ! command -v /usr/local/bin/brew &>/dev/null; then
+              /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            fi
+            /usr/local/bin/brew install python@3.11
+          '
 
-      - name: Build with PyInstaller
-        run: pyinstaller accesstwin.spec
+      - name: Install dependencies (x86_64)
+        run: |
+          arch -x86_64 /usr/local/bin/python3.11 -m pip install --upgrade pip
+          arch -x86_64 /usr/local/bin/python3.11 -m pip install -r requirements.txt
+          arch -x86_64 /usr/local/bin/python3.11 -m pip install pyinstaller
+
+      - name: Build with PyInstaller (x86_64)
+        run: arch -x86_64 /usr/local/bin/python3.11 -m PyInstaller accesstwin.spec
+
+      - name: Verify architecture
+        run: file dist/AccessTwin.app/Contents/MacOS/AccessTwin
 
       - name: Create DMG
         run: |
