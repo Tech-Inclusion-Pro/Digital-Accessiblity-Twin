@@ -77,14 +77,16 @@ jobs:
             if ! command -v /usr/local/bin/brew &>/dev/null; then
               /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
             fi
-            /usr/local/bin/brew install python@3.11
+            /usr/local/bin/brew install python@3.11 || true
           '
+          # Verify Python was installed
+          test -f /usr/local/bin/python3.11 && echo "Python 3.11 (x86_64) installed successfully"
 
       - name: Install dependencies (x86_64)
         run: |
-          arch -x86_64 /usr/local/bin/python3.11 -m pip install --upgrade pip
-          arch -x86_64 /usr/local/bin/python3.11 -m pip install -r requirements.txt
-          arch -x86_64 /usr/local/bin/python3.11 -m pip install pyinstaller
+          arch -x86_64 /usr/local/bin/python3.11 -m pip install --upgrade pip --break-system-packages
+          arch -x86_64 /usr/local/bin/python3.11 -m pip install -r requirements.txt --break-system-packages
+          arch -x86_64 /usr/local/bin/python3.11 -m pip install pyinstaller --break-system-packages
 
       - name: Build with PyInstaller (x86_64)
         run: arch -x86_64 /usr/local/bin/python3.11 -m PyInstaller accesstwin.spec
