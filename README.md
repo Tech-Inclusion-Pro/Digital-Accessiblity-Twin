@@ -323,6 +323,61 @@ AccessTwin's privacy architecture aligns with:
 
 ---
 
+## Screenshots
+
+### Student Experience
+
+#### Student Home Dashboard
+![Student home dashboard showing a welcome message for Maya Chen, with stats for 6 active supports, 100% UDL coverage, and 4.3 average effectiveness, followed by a grid of active support cards across sensory, technology, academic, and environmental categories](screenshots/student-home-dashboard.png)
+
+#### My Accessibility Profile — Strengths
+![Student profile page on the Strengths tab, listing priority-tagged strengths such as exceptional auditory memory, creative writing skills, self-advocacy, assistive technology proficiency, and peer mentoring, each with Edit and Remove buttons](screenshots/student-profile-strengths.png)
+
+#### My Accessibility Profile — Supports
+![Student profile page on the Supports tab, displaying active support cards for environmental, academic, technology, and sensory accommodations with UDL and POUR framework tags, effectiveness ratings, and an Add New Support form at the bottom](screenshots/student-profile-supports.png)
+
+#### My Accessibility Profile — History
+![Student profile page on the History tab, showing priority-tagged history entries including Stargardt disease diagnosis, itinerant vision services, IEP placement, driver's education program completion, and current enrollment in AP courses](screenshots/student-profile-history.png)
+
+#### My Accessibility Profile — Goals
+![Student profile page on the Goals tab, listing priority-tagged goals such as attending a university with disability services, pursuing journalism, learning refreshable braille, advocating for accessible textbooks, and developing independent travel skills](screenshots/student-profile-goals.png)
+
+#### My Accessibility Profile — Stakeholders
+![Student profile page on the Stakeholders tab, displaying priority-tagged stakeholders including parents, teachers, a vision rehabilitation therapist, an ophthalmologist, and a peer buddy, each with their role and Edit/Remove buttons](screenshots/student-profile-stakeholders.png)
+
+#### Log Experience
+![Student Log Experience page with a support selector showing ZoomText screen magnification software, a 1-to-5 effectiveness rating scale, a notes text area with voice input, a Submit Log button, and a list of recent logs with ratings and dates](screenshots/student-experience-log.png)
+
+#### Student-Led Progress Tracking
+![Student Tracking page showing an activity timeline with color-coded dots for different support categories, a line chart of effectiveness ratings trending upward over time, and a horizontal bar chart breaking down log counts by support category](screenshots/student-tracking.png)
+
+#### My Insights (AI-Powered)
+![Student My Insights page with a Generate Insights button, a saved insights dropdown dated February 15 2026, and an AI-generated report analyzing support effectiveness including ZoomText, printed handouts, preferential seating, and JAWS screen reader, with a chat input at the bottom](screenshots/student-ai-insights.png)
+
+#### Export Accessibility Twin
+![Export Twin page showing a JSON data preview of the student's complete accessibility profile including name, strengths with priority levels, supports summary, and history, with Export as JSON, Export as Excel, and Export as Word buttons at the bottom](screenshots/export-twin.png)
+
+### Teacher Experience
+
+#### Teacher Home Dashboard
+![Teacher home dashboard welcoming Ms. Rebecca Torres, showing stats for 5 imported twins, 7 documents evaluated, and 9 supports logged, with a grid of recent student cards including Maya Chen, Jordan Williams, Aisha Okafor, Liam Rodriguez, and Sophie Bennett](screenshots/teacher-home-dashboard.png)
+
+#### Evaluate Document
+![Teacher Evaluate Document page with a file upload chooser, a purpose/description text area with voice input, a student multi-select list, and an Upload Create Evaluation button with an AI-powered analysis placeholder below](screenshots/teacher-evaluate-document.png)
+
+#### Log Implementation
+![Teacher Log Implementation page with student and support selectors for Maya Chen and Sensory-Visual, implementation and outcome notes fields with voice input, a Submit Log button, and a list of recent implementation logs with outcome notes in green](screenshots/teacher-log-implementation.png)
+
+#### Teacher Tracking & Analytics
+![Teacher Tracking page showing an implementation timeline with color-coded dots for different students and support categories, a horizontal bar chart of activity by student, and an implementation frequency chart showing weekly activity counts](screenshots/teacher-tracking.png)
+
+### Accessibility
+
+#### Accessibility Settings Panel
+![Accessibility Settings dialog with five setting groups: Text and Font with font size set to Large and a dyslexia-friendly font checkbox, Text Spacing with letter spacing at 2px, Colors and Contrast with high contrast mode and Protanopia color blind mode selected, Cursor and Reading Aids with High Visibility Yellow/Black cursor, and Motion and Focus with reduce motion and enhanced focus indicator toggles](screenshots/accessibility-panel.png)
+
+---
+
 ## Installation
 
 ### Prerequisites
