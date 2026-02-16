@@ -380,11 +380,84 @@ AccessTwin's privacy architecture aligns with:
 
 ## Installation
 
-### Prerequisites
-- **Python 3.10** or later
-- **macOS 12+** (primary platform; Linux/Windows also supported)
+### Download (Recommended)
 
-### Steps
+Download the latest pre-built release for your platform — no Python installation required:
+
+> **[Download AccessTwin from the Releases page](https://github.com/Tech-Inclusion-Pro/Digital-Accessiblity-Twin/releases/latest)**
+
+| Platform | Download | How to Install |
+|----------|----------|----------------|
+| **macOS (Apple Silicon)** — M1/M2/M3/M4 | `AccessTwin-macOS-Apple-Silicon.dmg` | 1. Download the `.dmg` file<br>2. Double-click to open it<br>3. Drag **AccessTwin** into your **Applications** folder<br>4. Launch from **Launchpad**, **Spotlight** (search "AccessTwin"), or **Finder > Applications** |
+| **macOS (Intel)** | `AccessTwin-macOS-Intel.dmg` | 1. Download the `.dmg` file<br>2. Double-click to open it<br>3. Drag **AccessTwin** into your **Applications** folder<br>4. Launch from **Launchpad**, **Spotlight**, or **Finder > Applications** |
+| **Windows (64-bit)** | `AccessTwin-Windows-x64.zip` | 1. Download the `.zip` file<br>2. Right-click and select **Extract All...**<br>3. Open the extracted folder<br>4. Double-click **AccessTwin.exe** to launch |
+| **Linux (x86_64)** | `AccessTwin-Linux-x86_64.tar.gz` | 1. Download the `.tar.gz` file<br>2. Extract: `tar -xzf AccessTwin-Linux-x86_64.tar.gz`<br>3. Make executable: `chmod +x AccessTwin`<br>4. Run: `./AccessTwin` |
+
+#### Troubleshooting First Launch
+
+<details>
+<summary><strong>macOS: "AccessTwin is damaged" or "unidentified developer"</strong></summary>
+
+Since AccessTwin is not signed with an Apple Developer certificate, macOS Gatekeeper may block it on first launch.
+
+**Option A — Right-click to open (easiest):**
+1. Find **AccessTwin** in your Applications folder
+2. **Right-click** (or Control-click) the app
+3. Select **Open** from the context menu
+4. Click **Open** in the dialog that appears
+5. You only need to do this once — subsequent launches work normally
+
+**Option B — Terminal command:**
+```bash
+xattr -cr /Applications/AccessTwin.app
+```
+Then open the app normally.
+</details>
+
+<details>
+<summary><strong>Windows: SmartScreen blocks the app</strong></summary>
+
+1. When the "Windows protected your PC" dialog appears, click **More info**
+2. Click **Run anyway**
+3. You only need to do this once
+</details>
+
+<details>
+<summary><strong>Linux: Permission denied</strong></summary>
+
+Make sure the binary is executable:
+```bash
+chmod +x AccessTwin
+./AccessTwin
+```
+
+If you see missing library errors, install the required system packages:
+```bash
+# Ubuntu/Debian
+sudo apt-get install libegl1 libxkbcommon0 libxcb-cursor0 libportaudio2
+
+# Fedora/RHEL
+sudo dnf install mesa-libEGL libxkbcommon xcb-util-cursor portaudio
+```
+</details>
+
+#### Which macOS version do I have?
+
+Not sure whether your Mac uses Apple Silicon or Intel? Click the **Apple menu** () > **About This Mac**:
+- If it says **Apple M1**, **M2**, **M3**, or **M4** — download the **Apple Silicon** version
+- If it says **Intel** — download the **Intel** version
+
+---
+
+### Install from Source (Developer)
+
+If you prefer to run from source or want to contribute:
+
+#### Prerequisites
+- **Python 3.10** or later
+- **macOS 12+**, **Windows 10+**, or **Linux** (Ubuntu 20.04+)
+
+#### Steps
 
 1. **Clone the repository:**
    ```bash
@@ -392,27 +465,33 @@ AccessTwin's privacy architecture aligns with:
    cd Digital-Accessiblity-Twin
    ```
 
-2. **Install dependencies:**
+2. **Create a virtual environment (recommended):**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate        # macOS/Linux
+   # venv\Scripts\activate          # Windows
+   ```
+
+3. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Run the application:**
+4. **Run the application:**
    ```bash
    python main.py
    ```
 
-### macOS Application Bundle
+#### Building from Source
 
-On macOS, AccessTwin can be installed as a native application in `/Applications/`:
+To create your own standalone executable:
 
 ```bash
-# The app bundle can be created by placing the launcher at:
-# /Applications/AccessTwin.app/Contents/MacOS/AccessTwin
-# See project documentation for full .app bundle setup
+pip install pyinstaller
+pyinstaller accesstwin.spec
 ```
 
-Once installed, launch from **Finder**, **Spotlight** (search "AccessTwin"), or **Launchpad**.
+The built application will be in the `dist/` directory.
 
 ### Dependencies
 
