@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
+from config.constants import IMPORT_PURPOSES
 from config.settings import get_colors
 from models.student_profile import StudentProfile
 from models.support import SupportEntry
@@ -27,6 +28,7 @@ class TeacherStudentsPage(QWidget):
         self.auth = auth_manager
         self.backend_manager = backend_manager
         self._profiles: list = []
+        self._overview_md: dict = {}  # profile_id -> de-identified overview MD
         self._build_ui()
 
     def _build_ui(self):
@@ -65,6 +67,23 @@ class TeacherStudentsPage(QWidget):
         """)
         import_btn.clicked.connect(self._import_twin)
         toolbar.addWidget(import_btn)
+
+        import_md_btn = QPushButton("Import Overview (.md)")
+        import_md_btn.setAccessibleName(
+            "Import de-identified student overview from Markdown file"
+        )
+        import_md_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        import_md_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        import_md_btn.setFixedHeight(40)
+        import_md_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {c['secondary']}; color: white;
+                border: none; border-radius: 8px; padding: 0 20px;
+                font-weight: bold;
+            }}
+        """)
+        import_md_btn.clicked.connect(self._import_overview)
+        toolbar.addWidget(import_md_btn)
 
         layout.addLayout(toolbar)
 
@@ -171,6 +190,87 @@ class TeacherStudentsPage(QWidget):
 
         self.refresh_data()
 
+    def _import_overview(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Import Student Overview", "", "Markdown Files (*.md)"
+        )
+        if not path:
+            return
+
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                text = f.read()
+        except Exception as e:
+            QMessageBox.critical(self, "Import Error", f"Failed to read file: {e}")
+            return
+
+        from utils.share_overview import parse_overview_markdown
+        data = parse_overview_markdown(text)
+        if data is None:
+            QMessageBox.critical(
+                self, "Import Error",
+                "This file is not an AccessTwin overview. Ask the student to "
+                "use “Share Overview (.md)” in their AccessTwin.",
+            )
+            return
+
+        user = self.auth.get_current_user()
+        if not user:
+            return
+
+        session = self.db.get_session()
+        try:
+            profile = StudentProfile(
+                user_id=user.id,
+                name=data["alias"],
+                strengths_json=json.dumps(
+                    [{"text": s} for s in data["strengths"]]
+                ),
+                hopes_json=json.dumps([{"text": g} for g in data["goals"]]),
+            )
+            session.add(profile)
+            session.flush()
+
+            for se in data["supports"]:
+                session.add(SupportEntry(
+                    profile_id=profile.id,
+                    category=se["category"],
+                    subcategory=se["subcategory"],
+                    description=se["description"],
+                    status=se["status"],
+                    effectiveness_rating=se["effectiveness_rating"],
+                ))
+
+            doc = Document(
+                teacher_user_id=user.id,
+                filename=path.split("/")[-1],
+                file_type="md",
+                file_blob=text.encode("utf-8"),
+                purpose_description="overview_import",
+            )
+            session.add(doc)
+            session.flush()
+
+            session.add(TwinEvaluation(
+                document_id=doc.id,
+                student_profile_id=profile.id,
+            ))
+            session.commit()
+
+            QMessageBox.information(
+                self, "Imported",
+                f"Imported de-identified overview: {data['alias']}\n"
+                f"({len(data['supports'])} supports, "
+                f"{len(data['strengths'])} strengths)",
+            )
+        except Exception as e:
+            session.rollback()
+            QMessageBox.critical(self, "Import Error", f"Failed to import: {e}")
+        finally:
+            session.close()
+
+        self.refresh_data()
+
     def _filter_grid(self):
         query = self._search.text().strip().lower()
         self._populate_grid(query)
@@ -246,9 +346,51 @@ class TeacherStudentsPage(QWidget):
         coach_btn.clicked.connect(lambda checked, pid=profile.id: self._view_profile(pid))
         layout.addWidget(coach_btn)
 
-        card.setFixedHeight(110)
+        # Only overview imports are safe to paste into external AI tools —
+        # full JSON twins contain the student's real name and history.
+        if profile.id in self._overview_md:
+            prompt_btn = QPushButton("Copy AI Prompt")
+            prompt_btn.setAccessibleName(
+                f"Copy AI-ready coaching prompt for {profile.name} to clipboard"
+            )
+            prompt_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            prompt_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            prompt_btn.setFixedHeight(32)
+            prompt_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background: {c['dark_input']}; color: {c['text']};
+                    border: 1px solid {c['dark_border']}; border-radius: 6px;
+                    font-size: 12px;
+                }}
+                QPushButton:hover {{ background: {c['dark_hover']}; }}
+            """)
+            prompt_btn.clicked.connect(
+                lambda checked, pid=profile.id: self._copy_ai_prompt(pid)
+            )
+            layout.addWidget(prompt_btn)
+            card.setFixedHeight(148)
+        else:
+            card.setFixedHeight(110)
+
         card.setAccessibleName(f"Student: {profile.name}")
         return card
+
+    def _copy_ai_prompt(self, profile_id: int):
+        md = self._overview_md.get(profile_id)
+        if not md:
+            return
+
+        from PyQt6.QtWidgets import QApplication
+        from utils.share_overview import build_ai_prompt
+
+        QApplication.clipboard().setText(build_ai_prompt(md))
+        QMessageBox.information(
+            self, "Prompt Copied",
+            "An AI-ready coaching prompt was copied to your clipboard. "
+            "Paste it into the AI tool you use.\n\n"
+            "Remember: do not add the student's name, school, or other "
+            "identifying details to the conversation.",
+        )
 
     def _view_profile(self, profile_id: int):
         session = self.db.get_session()
@@ -288,16 +430,24 @@ class TeacherStudentsPage(QWidget):
             # Get profiles linked to this teacher via twin_import documents
             import_docs = session.query(Document).filter(
                 Document.teacher_user_id == user.id,
-                Document.purpose_description == "twin_import",
+                Document.purpose_description.in_(IMPORT_PURPOSES),
             ).all()
 
             profile_ids = set()
+            self._overview_md = {}
             for doc in import_docs:
                 evals = session.query(TwinEvaluation).filter(
                     TwinEvaluation.document_id == doc.id
                 ).all()
                 for ev in evals:
                     profile_ids.add(ev.student_profile_id)
+                    if doc.purpose_description == "overview_import":
+                        try:
+                            self._overview_md[ev.student_profile_id] = (
+                                doc.file_blob.decode("utf-8")
+                            )
+                        except (UnicodeDecodeError, AttributeError):
+                            pass
 
             if profile_ids:
                 self._profiles = session.query(StudentProfile).filter(

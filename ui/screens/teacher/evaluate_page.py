@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
+from config.constants import IMPORT_PURPOSES
 from config.settings import get_colors
 from models.student_profile import StudentProfile
 from models.document import Document
@@ -203,7 +204,7 @@ class TeacherEvaluatePage(QWidget):
             # Get accessible student profiles
             import_docs = session.query(Document).filter(
                 Document.teacher_user_id == user.id,
-                Document.purpose_description == "twin_import",
+                Document.purpose_description.in_(IMPORT_PURPOSES),
             ).all()
 
             profile_ids = set()

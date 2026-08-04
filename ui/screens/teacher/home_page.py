@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 
+from config.constants import IMPORT_PURPOSES
 from config.settings import get_colors
 from config.brand import ROLE_ACCENTS
 from models.student_profile import StudentProfile
@@ -142,7 +143,7 @@ class TeacherHomePage(QWidget):
             # via Documents with purpose_description="twin_import"
             import_docs = session.query(Document).filter(
                 Document.teacher_user_id == user.id,
-                Document.purpose_description == "twin_import",
+                Document.purpose_description.in_(IMPORT_PURPOSES),
             ).all()
 
             # Get profile IDs from twin evaluations linked to import docs

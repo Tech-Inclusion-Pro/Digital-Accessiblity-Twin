@@ -42,3 +42,8 @@ SECURITY_QUESTIONS = [
     "What is your favorite movie?",
     "What street did you grow up on?",
 ]
+
+
+# Document purpose values that link an imported student profile to a teacher.
+# "twin_import" = full JSON twin; "overview_import" = de-identified MD overview.
+IMPORT_PURPOSES = ("twin_import", "overview_import")
