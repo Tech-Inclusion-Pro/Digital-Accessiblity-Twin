@@ -20,10 +20,11 @@ from ui.components.empty_state import EmptyState
 class StudentExportPage(QWidget):
     """Export accessibility twin as JSON, Excel, or DOCX."""
 
-    def __init__(self, db_manager, auth_manager, parent=None):
+    def __init__(self, db_manager, auth_manager, backend_manager=None, parent=None):
         super().__init__(parent)
         self.db = db_manager
         self.auth = auth_manager
+        self.backend_manager = backend_manager
         self._profile = None
         self._build_ui()
 
@@ -139,8 +140,34 @@ class StudentExportPage(QWidget):
         docx_btn.clicked.connect(self._export_docx)
         btn_row.addWidget(docx_btn)
 
+        share_btn = QPushButton("Share Overview (.md)")
+        share_btn.setAccessibleName(
+            "Create de-identified overview to share with a teacher"
+        )
+        share_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        share_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        share_btn.setFixedHeight(APP_SETTINGS["touch_target_min"])
+        share_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {c['success']}; color: #10331a;
+                border: none; border-radius: 8px;
+                padding: 0 24px; font-weight: bold; font-size: 13px;
+            }}
+        """)
+        share_btn.clicked.connect(self._share_overview)
+        btn_row.addWidget(share_btn)
+
         btn_row.addStretch()
         content_layout.addLayout(btn_row)
+
+        share_note = QLabel(
+            "Share Overview creates a de-identified summary (no name, "
+            "history, stakeholders, or AI chats) that you review before it "
+            "is saved. The full exports above contain everything."
+        )
+        share_note.setStyleSheet(f"font-size: 12px; color: {c['text_muted']};")
+        share_note.setWordWrap(True)
+        content_layout.addWidget(share_note)
 
         layout.addWidget(self._content)
 
@@ -510,6 +537,35 @@ class StudentExportPage(QWidget):
             )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Export failed: {e}")
+
+    # -------------------------------------------------------- share overview
+
+    def _share_overview(self):
+        if not self._profile:
+            QMessageBox.warning(self, "No Data", "No profile data to share.")
+            return
+
+        session = self.db.get_session()
+        try:
+            supports = session.query(SupportEntry).filter(
+                SupportEntry.profile_id == self._profile.id
+            ).all()
+            logs = session.query(TrackingLog).filter(
+                TrackingLog.profile_id == self._profile.id
+            ).order_by(TrackingLog.created_at.desc()).all()
+
+            user = self.auth.get_current_user()
+            from ui.components.share_overview_dialog import ShareOverviewDialog
+            dlg = ShareOverviewDialog(
+                self._profile, supports, logs,
+                backend_manager=self.backend_manager,
+                db_manager=self.db,
+                user_id=user.id if user else None,
+                parent=self,
+            )
+            dlg.exec()
+        finally:
+            session.close()
 
     # ------------------------------------------------------------------ refresh
 

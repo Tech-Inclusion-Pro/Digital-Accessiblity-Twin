@@ -116,7 +116,9 @@ class StudentDashboard(QWidget):
         self._tracking_page = StudentTrackingPage(self.db, self.auth)
         self._stack.addWidget(self._tracking_page)
 
-        self._export_page = StudentExportPage(self.db, self.auth)
+        self._export_page = StudentExportPage(
+            self.db, self.auth, backend_manager=self.backend_manager
+        )
         self._stack.addWidget(self._export_page)
 
         self._insights_page = StudentInsightsPage(
